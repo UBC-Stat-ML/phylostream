@@ -1,0 +1,111 @@
+plugins {
+  id 'org.xtext.xtend' version '2.0.5'
+  id 'org.xtext.builder' version '2.0.5'
+  id 'java'
+  id 'eclipse'
+  id 'maven'
+  id 'application'
+}
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+repositories {
+  mavenCentral()
+  jcenter()
+  maven { url "file:///${System.properties['user.home']}/artifacts/" }
+  maven { url 'https://jitpack.io' }
+  maven { url "https://ubc-stat-ml.github.io/artifacts/" }
+  maven { url "https://www.stat.ubc.ca/~bouchard/maven/" }
+}
+
+xtend {
+  generator {
+    javaSourceLevel = 1.8
+  }
+}
+
+def blangVersion = '4.0.1' // Note to self: not the one that changes often!
+
+dependencies {
+  xtextLanguages "com.github.UBC-Stat-ML.blangDSL:ca.ubc.stat.blang:${blangVersion}"
+  compile "com.github.UBC-Stat-ML.blangDSL:ca.ubc.stat.blang:${blangVersion}"
+  compile group: 'org.eclipse.xtext', name: 'org.eclipse.xtext.xbase.lib', version: '2.16.0'
+  compile group: 'com.github.UBC-Stat-ML', name: 'inits', version: '3.3.4'
+  compile group: 'com.github.UBC-Stat-ML', name: 'bayonet', version: '4.1.7'
+  compile group: 'com.github.UBC-Stat-ML', name: 'binc', version: '2.0.5'
+  compile group: 'com.github.UBC-Stat-ML', name: 'xlinear', version: '2.3.0'
+  compile group: 'com.github.UBC-Stat-ML', name: 'pxviz', version: '1.2.1'
+  compile group: 'uk.com.robust-it', name: 'cloning', version: '1.9.6'
+  compile group: 'ca.ubc.stat', name: 'blangSDK', version: '2.7.0'
+}
+
+xtext {
+  languages {
+    blang {
+      setup = 'ca.ubc.stat.blang.BlangDslStandaloneSetup'
+      fileExtension = 'bl'
+      generator.outlet.producesJava = true
+      generator.javaSourceLevel = '1.8'
+    }
+  }
+}
+
+mainClassName = "blang.runtime.internals.Main"
+
+// Creates scripts for entry points
+// Subproject must apply application plugin to be able to call this method.
+def createScript(project, mainClass, name) {
+  project.tasks.create(name: name, type: CreateStartScripts) {
+    outputDir       = new File(project.buildDir, 'scripts')
+    mainClassName   = mainClass
+    applicationName = name
+    classpath       = project.tasks[JavaPlugin.JAR_TASK_NAME].outputs.files + project.configurations.runtime
+  }
+  project.tasks[name].dependsOn(project.jar)
+
+  project.applicationDistribution.with {
+    into("bin") {
+      from(project.tasks[name])
+      fileMode = 0755
+    }
+  }
+}
+
+// The next two lines disable the tasks for the primary main which by default
+// generates a script with a name matching the project name. 
+// You can leave them enabled but if so you'll need to define mainClassName
+// And you'll be creating your application scripts two different ways which 
+// could lead to confusion
+startScripts.enabled = true
+run.enabled = true
+
+// Call this for each Main class you want to expose with an app script
+createScript(project, 'blang.runtime.internals.DefaultPostProcessor', 'postprocess')
+createScript(project, 'blang.runtime.internals.CreateBlangGradleProject', 'create-blang-gradle-project')
+
+
+/* This exact task is used by the standalone compiler - do not remove or edit lightly! */
+task printClasspath {
+    doLast {
+        configurations.testRuntime.each { println it }
+    }
+}
+
+if (JavaVersion.current().isJava8Compatible()) {
+  allprojects {
+    //noinspection SpellCheckingInspection
+    tasks.withType(Javadoc) {
+      // disable the crazy super-strict doclint tool in Java 8
+      //noinspection SpellCheckingInspection
+      options.addStringOption('Xdoclint:none', '-quiet')
+    }
+  }
+}
+
+// Put before TRIM line otherwise large file gets generated 
+configurations.archives.with {
+  artifacts.remove artifacts.find { it.file =~ 'tar' }
+  artifacts.remove artifacts.find { it.file =~ 'zip' }
+}
+
