@@ -90,7 +90,7 @@ public class IncrementalSumProduct<N> {
   UnaryFactor<N> messageToLatestTip() {
     UnaryFactor<N> result = message(latestEdge());
     if (cachedMessages.size() != topology().edgeSet().size()) 
-      throw new RuntimeException("Potential memory leak detected. Cache after recomputation should be of the same size as the number of edges."); 
+      throw new RuntimeException("Potential memory leak detected. Cache after recomputation should be of the same size as the number of edges in the factor graph."); 
     return result;
   }
   
@@ -115,7 +115,6 @@ public class IncrementalSumProduct<N> {
   }
   
   void notifyFactorUpdated(Pair<N, N> edge) {
-    // orient using the cache
     if (edge == null) return; 
     cachedMessages.remove(edge);
     for (N neighbour : Graphs.neighborListOf(topology(), edge.getRight()))
