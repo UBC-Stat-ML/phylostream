@@ -33,6 +33,8 @@ public class IncrementalSumProduct<N> {
   
   final Map<Pair<N, N>, UnaryFactor<N>> cachedMessages; 
   
+  boolean messagesComputed;
+  
   public IncrementalSumProduct(DiscreteFactorGraph<N> graph, N latestTip) {
     // TODO: check graph.getTopology is a tree
     this.graph = graph;
@@ -45,6 +47,7 @@ public class IncrementalSumProduct<N> {
     SumProduct<N> sumProduct = new SumProduct<>(graph);
     sumProduct.computeMarginal(latestTip); 
     cachedMessages = sumProduct.cachedMessages;
+    messagesComputed = true;
   }
   
   public double logNormalization() {
@@ -56,6 +59,7 @@ public class IncrementalSumProduct<N> {
       toMultiply.add(result);
       result = graph.factorOperations().pointwiseProduct(toMultiply);
     }
+    messagesComputed = true;
     return result.logNormalization();
   }
   
@@ -66,9 +70,11 @@ public class IncrementalSumProduct<N> {
    * 
    * @param freshLatestTip
    */
-  public void updateTip(N freshLatestTip) {  
-    latestTip = freshLatestTip;
-    // trigger message computation; this will re-orient messages towards new tip, see (*) in message(Pair)
+  public void updateTip(N freshLatestTip) { 
+    if (!messagesComputed) throw new RuntimeException();
+    UnorderedPair<N, N> deletedEdge = deletedEdge(latestEdge(freshLatestTip));
+    notifyFactorUpdated(deletedEdge); 
+    latestTip = freshLatestTip; 
     messageToLatestTip();
   }
   
@@ -79,13 +85,37 @@ public class IncrementalSumProduct<N> {
    * When performing NNI, call this method on the edge that latestTip will be exchanged with; 
    * doing so BEFORE performing the topological change, to allow proper tracking of message dependencies.
    * 
+   * Several such notifications can be done in a row, however we assume 
+   * logNormalization will be called between the last notification and the next 
+   * call to updateTip().
+   * 
    * @param edge
    */
   public void notifyFactorUpdated(UnorderedPair<N, N> edge) {
+    messagesComputed = false;
     notifyFactorUpdated(orient(edge));
   }
   
   // Support methods below
+  
+  /**
+   * Construct the pair {v, w} which used to be an edge an is no
+   * longer one after the tip update.
+   * 
+   *         o 
+   *         ^
+   *         | newLatestEdge
+   *  \      |      /
+   * --o-----o-----o--
+   *   v           w
+   */
+  UnorderedPair<N, N> deletedEdge(Pair<N,N> newLatestEdge) {
+    List<N> nodes = new ArrayList<>(2);
+    for (N neighbour : Graphs.neighborListOf(topology(), newLatestEdge.getLeft()))
+      if (!neighbour.equals(newLatestEdge.getRight()))
+        nodes.add(neighbour);
+    return UnorderedPair.of(nodes.get(0), nodes.get(1));
+  }
   
   UnaryFactor<N> messageToLatestTip() {
     UnaryFactor<N> result = message(latestEdge());
@@ -118,7 +148,7 @@ public class IncrementalSumProduct<N> {
     if (edge == null) return; 
     cachedMessages.remove(edge);
     for (N neighbour : Graphs.neighborListOf(topology(), edge.getRight()))
-      if (neighbour != edge.getLeft())
+      if (!neighbour.equals(edge.getLeft()))
         notifyFactorUpdated(Pair.of(edge.getRight(), neighbour));
   }
   
@@ -134,7 +164,8 @@ public class IncrementalSumProduct<N> {
   static <N> Pair<N,N> reverse(Pair<N,N> edge) { return Pair.of(edge.getRight(), edge.getLeft()); }
   
   /** The edge pointing towards latestTip */
-  Pair<N,N> latestEdge() {
+  Pair<N,N> latestEdge() { return latestEdge(latestTip); }
+  Pair<N,N> latestEdge(N latestTip) {
     List<N> neighbours = Graphs.neighborListOf(topology(), latestTip);
     if (neighbours.size() != 1) throw new RuntimeException("" + latestTip + " should be a leaf.");
     return Pair.of(BriefCollections.pick(neighbours), latestTip);
