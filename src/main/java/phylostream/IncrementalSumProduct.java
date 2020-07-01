@@ -10,7 +10,6 @@ import org.jgrapht.UndirectedGraph;
 
 import bayonet.graphs.GraphUtils;
 import bayonet.marginal.BinaryFactor;
-import bayonet.marginal.DiscreteFactorGraph;
 import bayonet.marginal.FactorGraph;
 import bayonet.marginal.UnaryFactor;
 import bayonet.marginal.algo.SumProduct;
@@ -35,14 +34,14 @@ public class IncrementalSumProduct<N> {
   
   boolean messagesComputed;
   
-  public IncrementalSumProduct(DiscreteFactorGraph<N> graph, N latestTip) {
+  public IncrementalSumProduct(FactorGraph<N> graph, N latestTip) {
     // TODO: check graph.getTopology is a tree
     this.graph = graph;
     this.latestTip = latestTip;
     if (topology().degreeOf(latestTip) != 1) 
       throw new RuntimeException("" + latestTip + " should be a leaf.");
     // This implementation is based on memoization because updates are assumed small.
-    // However, for initialization, use the sum product machinery (based on loops) to avoid potentially 
+    // However, for initialization, use the standard SumProduct machinery (based on loops) to avoid potentially 
     // costly recursion for the initialization phase.
     SumProduct<N> sumProduct = new SumProduct<>(graph);
     sumProduct.computeMarginal(latestTip); 
@@ -51,7 +50,7 @@ public class IncrementalSumProduct<N> {
   }
   
   public double logNormalization() {
-    UnaryFactor<N> result = message(latestEdge()); //cachedMessages.get(latestEdge());
+    UnaryFactor<N> result = message(latestEdge()); 
     UnaryFactor<N> modelFactor = graph.getUnary(latestTip);
     if (modelFactor != null) {
       List<UnaryFactor<N>> toMultiply = new ArrayList<UnaryFactor<N>>(2);
@@ -71,7 +70,7 @@ public class IncrementalSumProduct<N> {
    * @param freshLatestTip
    */
   public void updateTip(N freshLatestTip) { 
-    if (!messagesComputed) throw new RuntimeException();
+    if (!messagesComputed) throw new RuntimeException("See (*) in notifyFactorUpdated()");  
     UnorderedPair<N, N> deletedEdge = deletedEdge(latestEdge(freshLatestTip));
     notifyFactorUpdated(deletedEdge); 
     latestTip = freshLatestTip; 
@@ -85,7 +84,7 @@ public class IncrementalSumProduct<N> {
    * When performing NNI, call this method on the edge that latestTip will be exchanged with; 
    * doing so BEFORE performing the topological change, to allow proper tracking of message dependencies.
    * 
-   * Several such notifications can be done in a row, however we assume 
+   * (*) Several such notifications can be done in a row, however we assume 
    * logNormalization will be called between the last notification and the next 
    * call to updateTip().
    * 
@@ -126,7 +125,6 @@ public class IncrementalSumProduct<N> {
   
   UnaryFactor<N> message(Pair<N,N> edge) {
     if (cachedMessages.containsKey(edge)) return cachedMessages.get(edge);
-    cachedMessages.remove(reverse(edge)); // rationale: see (*) in updateTip()
     N source = edge.getLeft(),
       destination = edge.getRight();
 
