@@ -26,7 +26,8 @@ import briefj.collections.UnorderedPair;
  */
 public class IncrementalSumProduct<N> {
   
-  final FactorGraph<N> graph;
+  // We assume the graph gets modified by external code (GrowingTree) but this instance gets notified of such changes.
+  public final FactorGraph<N> graph;
   
   N latestTip;
   
@@ -50,6 +51,11 @@ public class IncrementalSumProduct<N> {
   }
   
   public double logNormalization() {
+    UnaryFactor<N> result = tipMarginals();
+    return result.logNormalization();
+  }
+  
+  public UnaryFactor<N> tipMarginals() {
     UnaryFactor<N> result = message(latestEdge()); 
     UnaryFactor<N> modelFactor = graph.getUnary(latestTip);
     if (modelFactor != null) {
@@ -59,7 +65,7 @@ public class IncrementalSumProduct<N> {
       result = graph.factorOperations().pointwiseProduct(toMultiply);
     }
     messagesComputed = true;
-    return result.logNormalization();
+    return result;
   }
   
   /**
@@ -70,7 +76,8 @@ public class IncrementalSumProduct<N> {
    * @param freshLatestTip
    */
   public void updateTip(N freshLatestTip) { 
-    if (!messagesComputed) throw new RuntimeException("See (*) in notifyFactorUpdated()");  
+    if (!messagesComputed) // notifyFactorUpdated below will need to orient an edge, so we need to ensure this call will not crash
+      messageToLatestTip();
     UnorderedPair<N, N> deletedEdge = deletedEdge(latestEdge(freshLatestTip));
     notifyFactorUpdated(deletedEdge); 
     latestTip = freshLatestTip; 
@@ -84,9 +91,9 @@ public class IncrementalSumProduct<N> {
    * When performing NNI, call this method on the edge that latestTip will be exchanged with; 
    * doing so BEFORE performing the topological change, to allow proper tracking of message dependencies.
    * 
-   * (*) Several such notifications can be done in a row, however we assume 
-   * logNormalization will be called between the last notification and the next 
-   * call to updateTip().
+   * Several such notifications can be done in a row, but they should not be redundant 
+   * (trying to notify an edge that was already subsumed by another call will
+   * cause a crash because calling orient() will fail). 
    * 
    * @param edge
    */
@@ -150,7 +157,15 @@ public class IncrementalSumProduct<N> {
         notifyFactorUpdated(Pair.of(edge.getRight(), neighbour));
   }
   
-  /** Use the cached message to orient the edge towards the latestTip */
+  /** 
+   * Here orientation is a different concept than the directed edges in GrowingTree.
+   * In this class, IncrementalSumProduct, orientation refers to edges pointing towards 
+   * the latest tip, whereas in GrowingTree it refers to directing edges away from a 
+   * fixed root node (we keep those concepts distincts as we may want to do inference 
+   * over non-reversible models later on).
+   * 
+   * Here we use the cached messages to orient the edge towards the latestTip.
+   */
   Pair<N,N> orient(UnorderedPair<N, N> edge) {
     Pair<N,N> o1 = Pair.of(edge.getFirst(), edge.getSecond()); if (!cachedMessages.containsKey(o1)) o1 = null;
     Pair<N,N> o2 = Pair.of(edge.getSecond(), edge.getFirst()); if (!cachedMessages.containsKey(o2)) o2 = null;
