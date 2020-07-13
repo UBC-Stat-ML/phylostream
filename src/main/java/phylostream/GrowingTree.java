@@ -11,7 +11,6 @@ import org.jgrapht.UndirectedGraph;
 import bayonet.marginal.DiscreteFactorGraph;
 import bayonet.marginal.FactorGraph;
 import bayonet.marginal.UnaryFactor;
-import briefj.collections.UnorderedPair;
 import conifer.EvolutionaryModel;
 import conifer.TreeNode;
 import conifer.UnrootedTree;
@@ -44,7 +43,7 @@ public class GrowingTree {
     this.likelihoods = new ArrayList<IncrementalSumProduct<TreeNode>>(graphs.size());
     for (int category = 0; category < graphs.size(); category++) 
       likelihoods.add(new IncrementalSumProduct<TreeNode>(graphs.get(category), latestTip));
-    this.rootingParentPointers = parentsMap(tree.getTopology(), root);
+    this.rootingParentPointers = parentsMap(tree, root);
   }
   
   public double logLikelihood() {
@@ -152,7 +151,7 @@ public class GrowingTree {
     else throw new RuntimeException();
   }
   
-  Map<TreeNode, TreeNode> parentsMap(UndirectedGraph<TreeNode, UnorderedPair<TreeNode, TreeNode>> topology,
+  public static Map<TreeNode, TreeNode> parentsMap(UnrootedTree tree,
       TreeNode root) {
     Map<TreeNode, TreeNode> result = new LinkedHashMap<TreeNode, TreeNode>();
     for (Pair<TreeNode,TreeNode> directed : tree.getRootedEdges(root))
