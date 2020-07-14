@@ -1,7 +1,10 @@
 ## Meeting week July 13 2020
 
+- quick walk through of code - invite comments
+
+
 - GTR matrix
-- Path to data in FASTA?
+- Some data in FASTA
 - error rates?
 
 - new data structs for resampling https://www.vavr.io/vavr-docs/

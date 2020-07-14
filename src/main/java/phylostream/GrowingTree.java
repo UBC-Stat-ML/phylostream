@@ -93,6 +93,13 @@ public class GrowingTree {
       likelihood.notifyFactorUpdated(UnorderedPair.of(x, y)); 
   }
   
+  public void setLatestTipAnnealingParameter(double annealingParameter) {
+    for (int category = 0; category < likelihoods.size(); category++) {
+      graph(category).removeUnary(latestTip());
+      model.buildObservation(latestTip(), context(category, annealingParameter));
+    }
+  }
+  
   void updateRooting(TreeNode _v, TreeNode _w, TreeNode x, TreeNode freshLatestTip) {
     Pair<TreeNode, TreeNode> directed = orient(_v, _w);
     TreeNode v = directed.getLeft();
@@ -110,13 +117,6 @@ public class GrowingTree {
     rootingParentPointers.put(w, x);
     rootingParentPointers.put(x, v);
     rootingParentPointers.put(freshLatestTip, x);
-  }
-  
-  public void setLatestTipAnnealingParameter(double annealingParameter) {
-    for (int category = 0; category < likelihoods.size(); category++) {
-      graph(category).removeUnary(latestTip());
-      model.buildObservation(latestTip(), context(category, annealingParameter));
-    }
   }
   
   void addBranch(TreeNode x, TreeNode y, double length) {

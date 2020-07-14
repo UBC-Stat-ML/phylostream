@@ -41,8 +41,8 @@ public class Synthetic {
   @Arg              @DefaultValue("0.005")
   public double errorProbability = 0.005;
   
-  @Arg         @DefaultValue("/conifer/ctmc/kimura1980.txt")
-  public String rateMatrix = "/conifer/ctmc/kimura1980.txt";
+  @Arg         @DefaultValue("/phylostream/COVID_GTR.txt")
+  public String rateMatrix = "/phylostream/COVID_GTR.txt";
   
   @Arg @DefaultValue("1000")
   public int nSites = 1000;
