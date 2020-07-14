@@ -11,6 +11,7 @@ import org.jgrapht.UndirectedGraph;
 import bayonet.marginal.DiscreteFactorGraph;
 import bayonet.marginal.FactorGraph;
 import bayonet.marginal.UnaryFactor;
+import briefj.collections.UnorderedPair;
 import conifer.EvolutionaryModel;
 import conifer.TreeNode;
 import conifer.UnrootedTree;
@@ -85,6 +86,13 @@ public class GrowingTree {
       likelihood.updateTip(freshLatestTip);
   }
   
+  public void updateBranchLength(TreeNode x, TreeNode y, double length) {
+    removeBranch(x, y);
+    addBranch(x, y, length); 
+    for (IncrementalSumProduct<TreeNode> likelihood : likelihoods)
+      likelihood.notifyFactorUpdated(UnorderedPair.of(x, y)); 
+  }
+  
   void updateRooting(TreeNode _v, TreeNode _w, TreeNode x, TreeNode freshLatestTip) {
     Pair<TreeNode, TreeNode> directed = orient(_v, _w);
     TreeNode v = directed.getLeft();
@@ -134,8 +142,11 @@ public class GrowingTree {
   
   void removeBranch(TreeNode v, TreeNode w) {
     tree.removeEdge(v, w);
-    for (int category = 0; category < nCategories(); category++) 
-      graph(category).removeBinary(v, w);
+    for (int category = 0; category < nCategories(); category++) {
+      DiscreteFactorGraph<TreeNode> graph = graph(category);
+      graph.removeBinary(v, w);
+      graph.removeBinary(w, v);
+    }
   }
 
   int nCategories() { return likelihoods.size(); }

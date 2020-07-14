@@ -54,7 +54,7 @@ public class Synthetic {
     
     double [][] loadedRateMatrix = SimpleRateMatrix.fromResource(rateMatrix).getRateMatrix();
     int [] latent2observed = new int[] {0, 1, 2, 3};
-    RateMatrixToEmissionModel emissionModel = new NoisyEmissionModel(latent2observed, 4, ()->errorProbability);
+    RateMatrixToEmissionModel emissionModel = errorProbability == 0.0 ? null : new NoisyEmissionModel(latent2observed, 4, ()->errorProbability);
     CTMCParameters ctmc = new SimpleRateMatrix(loadedRateMatrix, emissionModel);
     DiscreteGammaMixture rateMatrixMixture = new DiscreteGammaMixture(() -> invariantSiteProbability, () -> shapeParameter, ctmc, nPositiveCategories);
     MultiCategorySubstitutionModel<DiscreteGammaMixture> model = new MultiCategorySubstitutionModel<DiscreteGammaMixture>(rateMatrixMixture, nSites);
