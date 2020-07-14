@@ -21,6 +21,11 @@ import conifer.io.TreeObservations;
 import conifer.models.DiscreteGammaMixture;
 import conifer.models.MultiCategorySubstitutionModel;
 
+/**
+ * Generates trees and datasets. 
+ * 
+ * See TestSynthetic for usage.
+ */
 public class Synthetic {
   
   @Arg              @DefaultValue("0.01")
@@ -50,7 +55,7 @@ public class Synthetic {
   public Realization next(Random rand) {
     RealDistribution branchDistribution = Exponential.distribution(() -> 1.0 / branchMeanLength);
     UnrootedTree tree = NonClockTreePriorUtils.sample(rand, branchDistribution, TopologyUtils.syntheticTaxaList(nLeaves));
-    TreeNode arbitraryRoot = TopologyUtils.arbitraryNode(tree);
+    TreeNode arbitraryRoot = arbitraryRoot(tree);
     
     double [][] loadedRateMatrix = SimpleRateMatrix.fromResource(rateMatrix).getRateMatrix();
     int [] latent2observed = new int[] {0, 1, 2, 3};
@@ -62,6 +67,17 @@ public class Synthetic {
     SequenceAlignment data = new SequenceAlignment(PhylogeneticObservationFactory.nucleotidesFactory(), nSites);
     
     return new Realization(arbitraryRoot, tree, model, data);
+  }
+  
+  /**
+   * Test in testAddTip requires the root not to be a leaf, so try to return that if possible. 
+   */
+  public static TreeNode arbitraryRoot(UnrootedTree tree) {
+    if (tree.leaves().size() <= 2) return TopologyUtils.arbitraryNode(tree);
+    for (TreeNode node : tree.getTopology().vertexSet())
+      if (node.isLabelled())
+        return node;
+    throw new RuntimeException();
   }
   
   public class Realization {

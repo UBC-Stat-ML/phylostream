@@ -20,6 +20,15 @@ import conifer.models.EvolutionaryModelUtils;
 import conifer.models.LikelihoodComputationContext;
 import conifer.models.LikelihoodFactoryContext;
 
+/**
+ * A rooted phylogenetic tree supporting 'growth' i.e. adding tips, as well as basic 
+ * tree operators such as changing a branch length or performing NNI operators.
+ * 
+ * See TestGrowingTree for usage.
+ * . 
+ * Keeps track of dynamic programming messages to ensure quick likelihood evaluation,
+ * via IncrementalSumProduct (one per rate category). 
+ */
 public class GrowingTree {
   
   // TODO: to support quick resampling, will need to switch to VAVR's Hash array mapped trie (https://en.wikipedia.org/wiki/Hash_array_mapped_trie)
@@ -30,12 +39,14 @@ public class GrowingTree {
   // NB: both 'tree' and 'likelihood.graph' share the same underlying topology object
   final UnrootedTree tree;
   final List<IncrementalSumProduct<TreeNode>> likelihoods; // one for each rate category
+  final TreeNode root;
   final Map<TreeNode, TreeNode> rootingParentPointers; // node -> parent 
   
   final EvolutionaryModel model;
   final TreeObservations observations;
   
   public GrowingTree(UnrootedTree tree, TreeNode root, EvolutionaryModel model, TreeObservations observations) {
+    this.root = root;
     this.model = model;
     this.observations = observations;
     this.tree = tree;
@@ -95,8 +106,11 @@ public class GrowingTree {
   
   public void setLatestTipAnnealingParameter(double annealingParameter) {
     for (int category = 0; category < likelihoods.size(); category++) {
-      graph(category).removeUnary(latestTip());
-      model.buildObservation(latestTip(), context(category, annealingParameter));
+      DiscreteFactorGraph<TreeNode> graph = graph(category);
+      if (graph.getUnary(latestTip()) != null)
+        graph.removeUnary(latestTip());
+      if (annealingParameter != 0.0)
+        model.buildObservation(latestTip(), context(category, annealingParameter));
     }
   }
   
@@ -123,9 +137,10 @@ public class GrowingTree {
     tree.addEdge(x, y, length);
     Pair<TreeNode, TreeNode> directedEdge = orient(x, y);
     for (int category = 0; category < nCategories(); category++) 
-      model.buildTransition(directedEdge.getLeft(), directedEdge.getRight(), context(category, 1.0)); 
+      model.buildTransition(directedEdge.getLeft(), directedEdge.getRight(), context(category)); 
   }
   
+  LikelihoodFactoryContext context(int category) { return context(category, Double.NaN); } // when the context will not make use of annealing parameter
   LikelihoodFactoryContext context(int category, double annealingParameter) {
     return new LikelihoodFactoryContext(likelihoods.get(category).graph, tree, observations, category, annealingParameter);
   }

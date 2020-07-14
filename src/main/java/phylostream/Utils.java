@@ -1,6 +1,7 @@
 package phylostream;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -14,6 +15,29 @@ import viz.components.TreeViz;
 import viz.core.Viz;
 
 public class Utils {
+  
+  // Adapted from VasiliNovikov's in https://stackoverflow.com/questions/4965335/how-to-print-binary-tree-diagram
+  public static String toString(UnrootedTree tree, TreeNode root) {
+    StringBuilder buffer = new StringBuilder(50);
+    toString(tree, root, buffer, "", "", null);
+    return buffer.toString();
+  }
+  
+  private static void toString(UnrootedTree tree, TreeNode node, StringBuilder buffer, String prefix, String childrenPrefix, TreeNode parent) {
+    buffer.append(prefix);
+    buffer.append(node.toString() + (parent == null ? "" : " [" + tree.getBranchLength(parent, node) + "]"));
+    buffer.append('\n');
+    for (Iterator<TreeNode> it = Graphs.neighborListOf(tree.getTopology(), node).iterator(); it.hasNext();) {
+      TreeNode next = it.next();
+      if (next != parent) {
+        if (it.hasNext()) {
+          toString(tree, next, buffer, childrenPrefix + "├── ", childrenPrefix + "│   ", node);
+        } else {
+          toString(tree, next, buffer, childrenPrefix + "└── ", childrenPrefix + "    ", node);
+        }
+      }
+    }
+  }
   
   public static void show(UnrootedTree tree) {
     show(tree, TopologyUtils.arbitraryNode(tree));
