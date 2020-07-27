@@ -3,6 +3,7 @@ package phylostream;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.jgrapht.Graphs;
 import org.junit.Assert;
 import org.junit.Test;
@@ -60,16 +61,31 @@ public class TestGrowingTree {
   }
   
   @Test
-  public void testBranchUpdate() {
+  public void testMoves() {
     Random rand = new Random(1);
     GrowingTree tree = getTree();
     
-    for (UnorderedPair<TreeNode, TreeNode> edge : new ArrayList<>(tree.tree.getTopology().edgeSet())) {
-      tree.updateBranchLength(edge.getFirst(), edge.getSecond(), rand.nextDouble());
-      if (rand.nextBoolean())
-        check(tree); 
+    for (int j = 0; j < 10; j++) {
+      
+      // perform some branch scalings
+      for (UnorderedPair<TreeNode, TreeNode> edge : new ArrayList<>(tree.tree.getTopology().edgeSet())) {
+        tree.updateBranchLength(edge.getFirst(), edge.getSecond(), rand.nextDouble());
+        if (rand.nextBoolean())
+          check(tree); 
+      }
+      
+      // then some NNIs
+      for (int i = 0; i < 100; i++) {
+        List<Pair<TreeNode,TreeNode>> possibleNNIs = Utils.possibleNNIs(tree);
+        Pair<TreeNode,TreeNode> selection = possibleNNIs.get(rand.nextInt(possibleNNIs.size()));
+        tree.interchange(selection.getLeft(), selection.getRight());
+        if (rand.nextBoolean())
+          check(tree); 
+      }
     }
+    
   }
+
   
   @Test
   public void testAddTip() {

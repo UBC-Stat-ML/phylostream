@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.xtext.xbase.lib.Functions.Function1;
 import org.jgrapht.Graphs;
 
@@ -15,6 +16,20 @@ import viz.components.TreeViz;
 import viz.core.Viz;
 
 public class Utils {
+  
+  /**
+   * Order in each pair coincides with order of arguments in GrowingTree.interchange
+   */
+  public static List<Pair<TreeNode,TreeNode>> possibleNNIs(GrowingTree tree) {
+    List<Pair<TreeNode,TreeNode>> result = new ArrayList<>();
+    TreeNode latestTipNeighbour = tree.latestEdge().getLeft();
+    for (TreeNode other : Graphs.neighborListOf(tree.topology(), latestTipNeighbour))
+      if (other != tree.latestTip())
+        for (TreeNode root : Graphs.neighborListOf(tree.topology(), other))
+          if (root != latestTipNeighbour)
+            result.add(Pair.of(root, other)); 
+    return result;
+  }
   
   // Adapted from VasiliNovikov's in https://stackoverflow.com/questions/4965335/how-to-print-binary-tree-diagram
   public static String toString(UnrootedTree tree, TreeNode root) {

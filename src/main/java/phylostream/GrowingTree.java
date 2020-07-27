@@ -98,10 +98,106 @@ public class GrowingTree {
   }
   
   public void updateBranchLength(TreeNode x, TreeNode y, double length) {
-    removeBranch(x, y);
-    addBranch(x, y, length); 
     for (IncrementalSumProduct<TreeNode> likelihood : likelihoods)
       likelihood.notifyFactorUpdated(UnorderedPair.of(x, y)); 
+    removeBranch(x, y);
+    addBranch(x, y, length); 
+  }
+  
+  /**
+   * Perform an interchange between the latestTip and the edge 
+   * (rootOfDisconnectedSubtree, otherEndPointOfCutEdge). 
+   * 
+   * The move creates the edges (latestTip, otherEndPointOfCutEdge) and
+   * (rootOfDisconnectedSubtree, x), 
+   * where x = unique neighbour of latestTip before the move
+   * 
+   * Schematic of the notation before the move:
+   * 
+   *         o latestTip                v [possibly a subtree]  
+   *         |                          o rootOfDisconnectedSubtree
+   *         | latestBranchLen          | otherBranchLen
+   *  \      |                          |     
+   * --o-----o--------------------------o-- ...
+   *         x                          otherEndPointOfCutEdge
+   *         
+   * Schematic of the notation after the move:
+   * 
+   *         v [possibly a subtree]      o latestTip       
+   *         o rootOfDisconnectedSubtree |    
+   *         | otherBranchLen            | latestBranchLen
+   *  \      |                           |     
+   * --o-----o---------------------------o-- ...
+   *         x                           otherEndPointOfCutEdge
+   * 
+   */
+  public void interchange(TreeNode rootOfDisconnectedSubtree, TreeNode otherEndPointOfCutEdge) {
+    for (IncrementalSumProduct<TreeNode> likelihood : likelihoods)
+      likelihood.notifyFactorUpdated(UnorderedPair.of(rootOfDisconnectedSubtree, otherEndPointOfCutEdge)); 
+    TreeNode x = latestEdge().getLeft();
+    if (!topology().containsEdge(x, otherEndPointOfCutEdge))
+      throw new RuntimeException();
+    double latestBranchLen = tree.getBranchLength(latestTip(), x);
+    double otherBranchLen = tree.getBranchLength(rootOfDisconnectedSubtree, otherEndPointOfCutEdge);
+    removeBranch(x, latestTip());
+    removeBranch(rootOfDisconnectedSubtree, otherEndPointOfCutEdge);
+    
+    // Update the oriention before adding the new branches
+    if (rootingParentPointers.get(rootOfDisconnectedSubtree) == otherEndPointOfCutEdge) {
+      /*
+       * This means the config before was 
+       * 
+       *         o latestTip                v  
+       *         ^                          o rootOfDisconnectedSubtree
+       *         |                          ^ 
+       *  \      |                          |     
+       * --o-----o?------------------------?o-- ...
+       *         x                          otherEndPointOfCutEdge
+       *         
+       * and hence after the move we should have
+       * 
+       *         v [possibly a subtree]      o latestTip       
+       *         o rootOfDisconnectedSubtree ^    
+       *         ^                           | 
+       *  \      |                           |     
+       * --o-----o?-------------------------?o-- ...
+       *         x                           otherEndPointOfCutEdge
+       *         
+       * where '?' denotes an orientation that do not matter
+       * since it will be the same before and after.
+       */
+      rootingParentPointers.put(rootOfDisconnectedSubtree, x);
+    } else { 
+      /*
+       * This means the config before was 
+       * 
+       *         o latestTip                v [possibly a subtree]  
+       *         ^                          o rootOfDisconnectedSubtree
+       *         |                          | 
+       *  \      |                          v     
+       * --o<----o<-------------------------o--> ...
+       *         x                          otherEndPointOfCutEdge
+       *         
+       * and hence after the move we should have
+       * 
+       *         v                           o latestTip       
+       *         o rootOfDisconnectedSubtree ^    
+       *         |                           | 
+       *  \      v                           |     
+       * --o<----o-------------------------->o--> ...
+       *         x                           otherEndPointOfCutEdge
+       *         
+       * I.e. in this sub-case the root was within the displaced 
+       * subtree, hence the edge between x and otherEndPointOfCutEdge 
+       * needs to be inverted.      
+       */
+      rootingParentPointers.put(x, rootOfDisconnectedSubtree);
+      rootingParentPointers.put(otherEndPointOfCutEdge, x);
+    }
+    rootingParentPointers.put(latestTip(), otherEndPointOfCutEdge);
+    
+    addBranch(otherEndPointOfCutEdge, latestTip(), latestBranchLen);
+    addBranch(rootOfDisconnectedSubtree, x, otherBranchLen);
   }
   
   public void setLatestTipAnnealingParameter(double annealingParameter) {
@@ -154,6 +250,7 @@ public class GrowingTree {
   }
   
   TreeNode latestTip() { return likelihoods.get(0).latestTip; }
+  Pair<TreeNode, TreeNode> latestEdge() { return likelihoods.get(0).latestEdge(); } 
   
   void removeBranch(TreeNode v, TreeNode w) {
     tree.removeEdge(v, w);
