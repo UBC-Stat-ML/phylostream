@@ -37,7 +37,7 @@ public class GrowingTree {
   //       best way to do this is probably write a java.util.Collection with an inner VAVR object.. not sure-issue is then changes via iterators, etc
   
   // NB: both 'tree' and 'likelihood.graph' share the same underlying topology object
-  final UnrootedTree tree;
+  final UnrootedTree unrootedTree; // public but should not be modified directl
   final List<IncrementalSumProduct<TreeNode>> likelihoods; // one for each rate category
   final TreeNode root;
   final Map<TreeNode, TreeNode> rootingParentPointers; // node -> parent 
@@ -45,12 +45,15 @@ public class GrowingTree {
   final EvolutionaryModel model;
   final TreeObservations observations;
   
+  private double annealingParameter;
+  
   public GrowingTree(UnrootedTree tree, TreeNode root, EvolutionaryModel model, TreeObservations observations) {
     this.root = root;
     this.model = model;
     this.observations = observations;
-    this.tree = tree;
+    this.unrootedTree = tree;
     TreeNode latestTip = tree.leaves().get(0);
+    this.annealingParameter = 1.0;
     List<FactorGraph<TreeNode>> graphs = EvolutionaryModelUtils.buildFactorGraphs(model, tree, root, observations);
     this.likelihoods = new ArrayList<IncrementalSumProduct<TreeNode>>(graphs.size());
     for (int category = 0; category < graphs.size(); category++) 
@@ -82,7 +85,7 @@ public class GrowingTree {
    *   v l1  x     w
    */
   public void addTip(TreeNode freshLatestTip, TreeNode v, TreeNode w, double l0, double l1) {  
-    double oldLength = tree.getBranchLength(v, w);
+    double oldLength = getBranchLength(v, w);
     TreeNode x = TreeNode.nextUnlabelled();
     if (l1 > oldLength) throw new RuntimeException();
     removeBranch(v, w);
@@ -93,8 +96,13 @@ public class GrowingTree {
     addBranch(x, w, oldLength - l1);
     addBranch(x, freshLatestTip, l0);
     // NB: NOT adding the tip unary since it is completely annealed.
+    this.annealingParameter = 0.0;
     for (IncrementalSumProduct<TreeNode> likelihood : likelihoods)
       likelihood.updateTip(freshLatestTip);
+  }
+  
+  public double getBranchLength(TreeNode v, TreeNode w) {
+    return unrootedTree.getBranchLength(v, w);
   }
   
   public void updateBranchLength(TreeNode x, TreeNode y, double length) {
@@ -137,8 +145,8 @@ public class GrowingTree {
     TreeNode x = latestEdge().getLeft();
     if (!topology().containsEdge(x, otherEndPointOfCutEdge))
       throw new RuntimeException();
-    double latestBranchLen = tree.getBranchLength(latestTip(), x);
-    double otherBranchLen = tree.getBranchLength(rootOfDisconnectedSubtree, otherEndPointOfCutEdge);
+    double latestBranchLen = unrootedTree.getBranchLength(latestTip(), x);
+    double otherBranchLen = unrootedTree.getBranchLength(rootOfDisconnectedSubtree, otherEndPointOfCutEdge);
     removeBranch(x, latestTip());
     removeBranch(rootOfDisconnectedSubtree, otherEndPointOfCutEdge);
     
@@ -200,7 +208,13 @@ public class GrowingTree {
     addBranch(rootOfDisconnectedSubtree, x, otherBranchLen);
   }
   
+  public double getLatestTipAnnealingParameter() { return annealingParameter; }
+  
   public void setLatestTipAnnealingParameter(double annealingParameter) {
+    
+    if (this.annealingParameter == annealingParameter) return;
+    this.annealingParameter = annealingParameter;
+    
     for (int category = 0; category < likelihoods.size(); category++) {
       DiscreteFactorGraph<TreeNode> graph = graph(category);
       if (graph.getUnary(latestTip()) != null)
@@ -230,7 +244,7 @@ public class GrowingTree {
   }
   
   void addBranch(TreeNode x, TreeNode y, double length) {
-    tree.addEdge(x, y, length);
+    unrootedTree.addEdge(x, y, length);
     Pair<TreeNode, TreeNode> directedEdge = orient(x, y);
     for (int category = 0; category < nCategories(); category++) 
       model.buildTransition(directedEdge.getLeft(), directedEdge.getRight(), context(category)); 
@@ -238,11 +252,11 @@ public class GrowingTree {
   
   LikelihoodFactoryContext context(int category) { return context(category, Double.NaN); } // when the context will not make use of annealing parameter
   LikelihoodFactoryContext context(int category, double annealingParameter) {
-    return new LikelihoodFactoryContext(likelihoods.get(category).graph, tree, observations, category, annealingParameter);
+    return new LikelihoodFactoryContext(likelihoods.get(category).graph, unrootedTree, observations, category, annealingParameter);
   }
   
   UndirectedGraph<TreeNode, ?> topology() {
-    return tree.getTopology();
+    return unrootedTree.getTopology();
   }
   
   DiscreteFactorGraph<TreeNode> graph(int category) {
@@ -253,7 +267,7 @@ public class GrowingTree {
   Pair<TreeNode, TreeNode> latestEdge() { return likelihoods.get(0).latestEdge(); } 
   
   void removeBranch(TreeNode v, TreeNode w) {
-    tree.removeEdge(v, w);
+    unrootedTree.removeEdge(v, w);
     for (int category = 0; category < nCategories(); category++) {
       DiscreteFactorGraph<TreeNode> graph = graph(category);
       graph.removeBinary(v, w);

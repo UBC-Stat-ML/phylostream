@@ -49,7 +49,7 @@ public class TestGrowingTree {
     final double reference = rooting1.logLikelihood();
     
     TreeNode anotherRoot = null;
-    loop:for (TreeNode node : rooting1.tree.getTopology().vertexSet())
+    loop:for (TreeNode node : rooting1.unrootedTree.getTopology().vertexSet())
       if (node != anotherRoot) {
         anotherRoot = node;
         break loop;
@@ -68,7 +68,7 @@ public class TestGrowingTree {
     for (int j = 0; j < 10; j++) {
       
       // perform some branch scalings
-      for (UnorderedPair<TreeNode, TreeNode> edge : new ArrayList<>(tree.tree.getTopology().edgeSet())) {
+      for (UnorderedPair<TreeNode, TreeNode> edge : new ArrayList<>(tree.unrootedTree.getTopology().edgeSet())) {
         tree.updateBranchLength(edge.getFirst(), edge.getSecond(), rand.nextDouble());
         if (rand.nextBoolean())
           check(tree); 
@@ -95,7 +95,7 @@ public class TestGrowingTree {
     final double reference = tree.logLikelihood();
     
     // pick leaf
-    UnrootedTree reducedTree = tree.tree;
+    UnrootedTree reducedTree = tree.unrootedTree;
     
     // record its position and remove it
     TreeNode leaf = reducedTree.leaves().get(1);
@@ -134,11 +134,11 @@ public class TestGrowingTree {
    * Compare the logLikelihood computed from scratch from the one computed incrementally.
    */
   void check(GrowingTree tree) {
-    TreeNode arbitraryRoot = TopologyUtils.arbitraryNode(tree.tree);
+    TreeNode arbitraryRoot = TopologyUtils.arbitraryNode(tree.unrootedTree);
     LikelihoodComputationContext context = new LikelihoodComputationContext(
           EvolutionaryModelUtils.buildFactorGraphs(
             tree.model, 
-            tree.tree, 
+            tree.unrootedTree, 
             arbitraryRoot, 
             tree.observations), 
           arbitraryRoot);

@@ -1,0 +1,16 @@
+package phylostream.blang
+
+import phylostream.Synthetic
+
+model PhyloModel {
+  random BayesianPhylo tree ?: {
+    val rand = new Random(1)
+    val synt = new Synthetic
+    val realization = synt.next(rand)
+    new BayesianPhylo(realization.trueTree, realization.trueRoot, realization.trueModel, realization.nextDataset(rand), Exponential::distribution(10.0));
+  }
+  laws {
+    tree ~ PhyloStreamPrior
+    | tree ~ LogPotential(tree.logLikelihood)
+  }
+}

@@ -2,6 +2,7 @@ package phylostream;
 
 import java.util.Random;
 
+import blang.core.RealConstant;
 import blang.core.RealDistribution;
 import blang.distributions.Exponential;
 import blang.inits.Arg;
@@ -53,15 +54,15 @@ public class Synthetic {
   public int nSites = 1000;
   
   public Realization next(Random rand) {
-    RealDistribution branchDistribution = Exponential.distribution(() -> 1.0 / branchMeanLength);
+    RealDistribution branchDistribution = Exponential.distribution(new RealConstant(1.0 / branchMeanLength)); 
     UnrootedTree tree = NonClockTreePriorUtils.sample(rand, branchDistribution, TopologyUtils.syntheticTaxaList(nLeaves));
     TreeNode arbitraryRoot = arbitraryRoot(tree);
     
     double [][] loadedRateMatrix = SimpleRateMatrix.fromResource(rateMatrix).getRateMatrix();
     int [] latent2observed = new int[] {0, 1, 2, 3};
-    RateMatrixToEmissionModel emissionModel = errorProbability == 0.0 ? null : new NoisyEmissionModel(latent2observed, 4, ()->errorProbability);
+    RateMatrixToEmissionModel emissionModel = errorProbability == 0.0 ? null : new NoisyEmissionModel(latent2observed, 4, new RealConstant(errorProbability));
     CTMCParameters ctmc = new SimpleRateMatrix(loadedRateMatrix, emissionModel);
-    DiscreteGammaMixture rateMatrixMixture = new DiscreteGammaMixture(() -> invariantSiteProbability, () -> shapeParameter, ctmc, nPositiveCategories);
+    DiscreteGammaMixture rateMatrixMixture = new DiscreteGammaMixture(new RealConstant(invariantSiteProbability), new RealConstant(shapeParameter), ctmc, nPositiveCategories);
     MultiCategorySubstitutionModel<DiscreteGammaMixture> model = new MultiCategorySubstitutionModel<DiscreteGammaMixture>(rateMatrixMixture, nSites);
     
     SequenceAlignment data = new SequenceAlignment(PhylogeneticObservationFactory.nucleotidesFactory(), nSites);
