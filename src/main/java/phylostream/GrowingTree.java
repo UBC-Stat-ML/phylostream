@@ -52,7 +52,7 @@ public class GrowingTree {
     this.model = model;
     this.observations = observations;
     this.unrootedTree = tree;
-    TreeNode latestTip = tree.leaves().get(0);
+    TreeNode latestTip = tree.leaves().stream().filter((TreeNode it) -> it != root).findFirst().get();
     this.annealingParameter = 1.0;
     List<FactorGraph<TreeNode>> graphs = EvolutionaryModelUtils.buildFactorGraphs(model, tree, root, observations);
     this.likelihoods = new ArrayList<IncrementalSumProduct<TreeNode>>(graphs.size());
@@ -138,8 +138,9 @@ public class GrowingTree {
    * --o-----o---------------------------o-- ...
    *         x                           otherEndPointOfCutEdge
    * 
+   * Return the arguments used to undo this move. 
    */
-  public void interchange(TreeNode rootOfDisconnectedSubtree, TreeNode otherEndPointOfCutEdge) {
+  public Pair<TreeNode, TreeNode> interchange(TreeNode rootOfDisconnectedSubtree, TreeNode otherEndPointOfCutEdge) {
     for (IncrementalSumProduct<TreeNode> likelihood : likelihoods)
       likelihood.notifyFactorUpdated(UnorderedPair.of(rootOfDisconnectedSubtree, otherEndPointOfCutEdge)); 
     TreeNode x = latestEdge().getLeft();
@@ -206,15 +207,15 @@ public class GrowingTree {
     
     addBranch(otherEndPointOfCutEdge, latestTip(), latestBranchLen);
     addBranch(rootOfDisconnectedSubtree, x, otherBranchLen);
+    
+    return Pair.of(rootOfDisconnectedSubtree, x);
   }
   
   public double getLatestTipAnnealingParameter() { return annealingParameter; }
   
   public void setLatestTipAnnealingParameter(double annealingParameter) {
-    
     if (this.annealingParameter == annealingParameter) return;
     this.annealingParameter = annealingParameter;
-    
     for (int category = 0; category < likelihoods.size(); category++) {
       DiscreteFactorGraph<TreeNode> graph = graph(category);
       if (graph.getUnary(latestTip()) != null)
@@ -294,5 +295,10 @@ public class GrowingTree {
     for (Pair<TreeNode,TreeNode> directed : tree.getRootedEdges(root))
       result.put(directed.getRight(), directed.getLeft());
     return result;
+  }
+  
+  @Override
+  public String toString() {
+    return unrootedTree.toString();
   }
 }

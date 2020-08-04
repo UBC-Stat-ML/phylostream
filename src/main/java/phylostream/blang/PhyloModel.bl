@@ -2,12 +2,16 @@ package phylostream.blang
 
 import phylostream.Synthetic
 
-model PhyloModel {
+model PhyloModel { 
+  
   random BayesianPhylo tree ?: {
     val rand = new Random(1)
-    val synt = new Synthetic
+    val synt = new Synthetic => [nLeaves = 2]
     val realization = synt.next(rand)
-    new BayesianPhylo(realization.trueTree, realization.trueRoot, realization.trueModel, realization.nextDataset(rand), Exponential::distribution(10.0));
+    System.out.println(realization.trueTree)
+    val dataset = realization.nextDataset(rand)
+    val result = new BayesianPhylo(realization.trueTree, realization.trueRoot, realization.trueModel, dataset, Exponential::distribution(10.0));
+    result
   }
   laws {
     tree ~ PhyloStreamPrior

@@ -6,8 +6,11 @@ import blang.types.AnnealingParameter;
 import java.util.List;
 import java.util.Random;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 import blang.core.RealDistribution;
 import blang.mcmc.Samplers;
+import blang.runtime.internals.objectgraph.SkipDependency;
 import conifer.UnrootedTree;
 import conifer.factors.NonClockTreePriorUtils;
 import conifer.EvolutionaryModel;
@@ -22,12 +25,16 @@ import conifer.TreeNode;
  * - keeps track of the tip to add automatically
  * - allows sampling from initial 2-leaves tree to initialize things
  */
-@Samplers({BranchSampler.class}) 
+@Samplers({BranchSlicer.class, NNI.class}) 
 public class BayesianPhylo {
+  @SkipDependency(isMutable = true)
   GrowingTree tree;
+  
   final AnnealingParameter annealingParameter = new AnnealingParameter();
   final RealDistribution branchLengthPrior;
   final EvolutionaryModel model;
+  
+  @SkipDependency(isMutable = false)
   final TreeObservations observations;
   double logPrior;
   int nLeaves;
@@ -47,13 +54,13 @@ public class BayesianPhylo {
     nLeaves = unrootedTree.leaves().size();
   }
 
-  public void sampleInitial(Random rand) {
+  public void sampleInitialCherry(Random rand) {
     List<TreeNode> leaves = observations.getObservedTreeNodes().subList(0, 2);
     UnrootedTree unrootedTree = NonClockTreePriorUtils.sample(rand, branchLengthPrior, leaves);
-    TreeNode root = leaves.get(1);
+    TreeNode root = leaves.get(0);
     this.tree = new GrowingTree(unrootedTree, root, model, observations);
     recomputeTreeStatistics(unrootedTree); 
-    tree.setLatestTipAnnealingParameter(0.0); 
+    this.tree.setLatestTipAnnealingParameter(0.0);
   }
   
   public double logPrior() { return logPrior; }
@@ -61,6 +68,10 @@ public class BayesianPhylo {
   public double logLikelihood() {  
     tree.setLatestTipAnnealingParameter(annealingParameter.doubleValue());
     return tree.logLikelihood();
+  }
+  
+  public double logDensity() { 
+    return logPrior() + logLikelihood(); 
   }
   
   public void addTip(TreeNode freshLatestTip, TreeNode v, TreeNode w, double l0, double l1) {
@@ -83,10 +94,14 @@ public class BayesianPhylo {
     tree.updateBranchLength(x, y, length);
   }
   
-  public void interchange(TreeNode rootOfDisconnectedSubtree, TreeNode otherEndPointOfCutEdge) {
+  public Pair<TreeNode,TreeNode> interchange(TreeNode rootOfDisconnectedSubtree, TreeNode otherEndPointOfCutEdge) {
     // no change in prior
     // likelihood:
-    tree.interchange(rootOfDisconnectedSubtree, otherEndPointOfCutEdge);
+    return tree.interchange(rootOfDisconnectedSubtree, otherEndPointOfCutEdge);
   }
-  
+
+  @Override
+  public String toString() {
+    return tree.toString();
+  }
 }
