@@ -64,7 +64,6 @@ public class IncrementalSumProduct<N> {
       toMultiply.add(result);
       result = graph.factorOperations().pointwiseProduct(toMultiply);
     }
-    messagesComputed = true;
     return result;
   }
   
@@ -77,7 +76,7 @@ public class IncrementalSumProduct<N> {
    */
   public void updateTip(N freshLatestTip) { 
     if (!messagesComputed) // notifyFactorUpdated below will need to orient an edge, so we need to ensure this call will not crash
-      messageToLatestTip();
+      throw new RuntimeException();
     UnorderedPair<N, N> deletedEdge = deletedEdge(latestEdge(freshLatestTip));
     notifyFactorUpdated(deletedEdge); 
     latestTip = freshLatestTip; 
@@ -123,6 +122,10 @@ public class IncrementalSumProduct<N> {
     return UnorderedPair.of(nodes.get(0), nodes.get(1));
   }
   
+  public void recomputeMessages() {
+    messageToLatestTip();
+  }
+  
   UnaryFactor<N> messageToLatestTip() {
     UnaryFactor<N> result = message(latestEdge());
     if (cachedMessages.size() != topology().edgeSet().size()) 
@@ -146,6 +149,7 @@ public class IncrementalSumProduct<N> {
     BinaryFactor<N> binaryFactor = graph.getBinary(source, destination);
     UnaryFactor<N> result = graph.factorOperations().marginalize(binaryFactor, toMultiply);
     cachedMessages.put(edge, result);
+    messagesComputed = true;
     return result;
   }
   

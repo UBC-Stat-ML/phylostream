@@ -1,4 +1,4 @@
-package phylostream.blang;
+package phylostream.mcmc;
 
 import java.util.List;
 
@@ -13,6 +13,7 @@ import blang.mcmc.SampledVariable;
 import blang.mcmc.internals.Callback;
 import conifer.TreeNode;
 import phylostream.Utils;
+import phylostream.blang.BayesianPhylo;
 
 public class NNI extends MHSampler {
   
@@ -34,7 +35,7 @@ public class NNI extends MHSampler {
     Pair<TreeNode, TreeNode> undoMove = phylo.interchange(move.getLeft(), move.getRight());
     if (!callback.sampleAcceptance()) {
       phylo.interchange(undoMove.getLeft(), undoMove.getRight());
-      NumericalUtils.checkIsClose(phylo.logDensity(), initialLogDensity, 1e-100);
+      NumericalUtils.checkIsClose(phylo.logDensity(), initialLogDensity);
     }
   }
 

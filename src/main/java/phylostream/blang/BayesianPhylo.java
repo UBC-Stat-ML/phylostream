@@ -1,9 +1,14 @@
 package phylostream.blang;
 
 import phylostream.GrowingTree;
+import phylostream.mcmc.BranchSlicer;
+import phylostream.mcmc.NNI;
 import blang.types.AnnealingParameter;
+import briefj.collections.UnorderedPair;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -28,9 +33,9 @@ import conifer.TreeNode;
 @Samplers({BranchSlicer.class, NNI.class}) 
 public class BayesianPhylo {
   @SkipDependency(isMutable = true)
-  GrowingTree tree;
+  public GrowingTree tree;
   
-  final AnnealingParameter annealingParameter = new AnnealingParameter();
+  public final AnnealingParameter annealingParameter = new AnnealingParameter();
   final RealDistribution branchLengthPrior;
   final EvolutionaryModel model;
   
@@ -39,12 +44,15 @@ public class BayesianPhylo {
   double logPrior;
   int nLeaves;
   
-  public BayesianPhylo(UnrootedTree unrootedTree, TreeNode root, EvolutionaryModel model, TreeObservations observations, RealDistribution branchLengthPrior) {
-    this.tree = new GrowingTree(unrootedTree, root, model, observations);
+  /**
+   * Create an un-initialized BayesianPhylo
+   */
+  public BayesianPhylo(EvolutionaryModel model, TreeObservations observations, RealDistribution branchLengthPrior) {
+    this.tree = null;
     this.model = model;
     this.observations = observations;
     this.branchLengthPrior = branchLengthPrior;
-    recomputeTreeStatistics(unrootedTree); 
+    //recomputeTreeStatistics(unrootedTree); 
   }
   
   private void recomputeTreeStatistics(UnrootedTree unrootedTree) {
@@ -74,6 +82,31 @@ public class BayesianPhylo {
     return logPrior() + logLikelihood(); 
   }
   
+  /**
+   * Sample attachment point uniformly on the tree branches viewed as a continuous space.
+   * 
+   * Yields constant weight update when using an exponential prior on branch lengths (see pictures Aug 3).
+   * Even in such case might need an update on the weights, which can be ignored 
+   * if (1) rate of prior on branch length is fixed (2) we do not care about absolute 
+   * marginal likelihood numerical values. 
+   */
+  public void addTipContinuousUniform(TreeNode freshLatestTip, Random rand) {
+    // TODO: this makes it quadratic, but can be addressed by keeping these branch lengths in a 
+    // binary tree. Will need to carefully update it so wait it becomes a bottleneck. 
+    Map<UnorderedPair<TreeNode, TreeNode>, Double> branchLengths = tree.getBranchLengths();
+    double totalBranchLength = branchLengths.values().stream().mapToDouble(Double::doubleValue).sum();
+    double sum = 0.0;
+    double unif = rand.nextDouble() * totalBranchLength;
+    for (Entry<UnorderedPair<TreeNode, TreeNode>, Double> entry : branchLengths.entrySet()) {
+      sum += entry.getValue();
+      if (sum >= unif) {
+        addTip(freshLatestTip, entry.getKey().getFirst(), entry.getKey().getSecond(), branchLengthPrior.sample(rand), rand.nextDouble() * entry.getValue());
+        return;
+      }
+    }
+    throw new RuntimeException();
+  }
+    
   public void addTip(TreeNode freshLatestTip, TreeNode v, TreeNode w, double l0, double l1) {
     // update prior:
     final double oldLength = tree.getBranchLength(v, w); // do this first!

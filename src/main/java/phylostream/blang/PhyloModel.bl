@@ -1,17 +1,20 @@
 package phylostream.blang
 
-import phylostream.Synthetic
+import phylostream.io.Synthetic
+import phylostream.io.Dataset
+import phylostream.io.Globals
 
 model PhyloModel { 
-  
+  param Dataset data
   random BayesianPhylo tree ?: {
-    val rand = new Random(1)
-    val synt = new Synthetic => [nLeaves = 2]
-    val realization = synt.next(rand)
-    System.out.println(realization.trueTree)
-    val dataset = realization.nextDataset(rand)
-    val result = new BayesianPhylo(realization.trueTree, realization.trueRoot, realization.trueModel, dataset, Exponential::distribution(10.0));
-    result
+    if (data instanceof Synthetic) {
+      val realization = data.next()
+      System.out.println("Generating tree: " + realization.trueTree)
+      val dataset = realization.nextDataset()
+      Globals::alignment = dataset
+      val result = new BayesianPhylo(realization.trueModel, dataset, Exponential::distribution(10.0));
+      result
+    } else throw new RuntimeException
   }
   laws {
     tree ~ PhyloStreamPrior

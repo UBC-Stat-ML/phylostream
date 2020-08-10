@@ -37,7 +37,7 @@ public class GrowingTree {
   //       best way to do this is probably write a java.util.Collection with an inner VAVR object.. not sure-issue is then changes via iterators, etc
   
   // NB: both 'tree' and 'likelihood.graph' share the same underlying topology object
-  final UnrootedTree unrootedTree; // public but should not be modified directl
+  final UnrootedTree unrootedTree; 
   final List<IncrementalSumProduct<TreeNode>> likelihoods; // one for each rate category
   final TreeNode root;
   final Map<TreeNode, TreeNode> rootingParentPointers; // node -> parent 
@@ -85,6 +85,8 @@ public class GrowingTree {
    *   v l1  x     w
    */
   public void addTip(TreeNode freshLatestTip, TreeNode v, TreeNode w, double l0, double l1) {  
+    if (unrootedTree.getTopology().containsVertex(freshLatestTip))
+      throw new RuntimeException();
     double oldLength = getBranchLength(v, w);
     TreeNode x = TreeNode.nextUnlabelled();
     if (l1 > oldLength) throw new RuntimeException();
@@ -105,11 +107,20 @@ public class GrowingTree {
     return unrootedTree.getBranchLength(v, w);
   }
   
+  /**
+   * Do not edit the result. Use updateBranchLength() instead.
+   */
+  public Map<UnorderedPair<TreeNode, TreeNode>, Double> getBranchLengths() {
+    return unrootedTree.getBranchLengths(); 
+  }
+  
   public void updateBranchLength(TreeNode x, TreeNode y, double length) {
     for (IncrementalSumProduct<TreeNode> likelihood : likelihoods)
       likelihood.notifyFactorUpdated(UnorderedPair.of(x, y)); 
     removeBranch(x, y);
     addBranch(x, y, length); 
+    for (IncrementalSumProduct<TreeNode> likelihood : likelihoods)
+      likelihood.recomputeMessages();
   }
   
   /**
@@ -207,6 +218,9 @@ public class GrowingTree {
     
     addBranch(otherEndPointOfCutEdge, latestTip(), latestBranchLen);
     addBranch(rootOfDisconnectedSubtree, x, otherBranchLen);
+    
+    for (IncrementalSumProduct<TreeNode> likelihood : likelihoods)
+      likelihood.recomputeMessages();
     
     return Pair.of(rootOfDisconnectedSubtree, x);
   }

@@ -1,4 +1,4 @@
-package phylostream.blang;
+package phylostream.mcmc;
 
 import java.util.Arrays;
 import java.util.List;
@@ -15,6 +15,7 @@ import blang.mcmc.SampledVariable;
 import blang.mcmc.Sampler;
 import conifer.TreeNode;
 import phylostream.Utils;
+import phylostream.blang.BayesianPhylo;
 
 public class BranchSlicer implements Sampler {
   

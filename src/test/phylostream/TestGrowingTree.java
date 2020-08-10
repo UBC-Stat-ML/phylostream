@@ -18,7 +18,8 @@ import briefj.collections.UnorderedPair;
 import conifer.TreeNode;
 import conifer.UnrootedTree;
 import conifer.io.TreeObservations;
-import phylostream.Synthetic.Realization;
+import phylostream.io.Synthetic;
+import phylostream.io.Synthetic.Realization;
 
 import static phylostream.Utils.check;
 
@@ -30,12 +31,11 @@ public class TestGrowingTree {
   public GrowingTree getTree() { return getTree(0.005, 10); }
   public GrowingTree getTree(double errorProbability) { return getTree(errorProbability, 10); }
   public GrowingTree getTree(double errorProbability, int nLeaves) {
-    Random rand = new Random(1);
     Synthetic generator = new Synthetic();
     generator.nLeaves = nLeaves;
     generator.errorProbability = errorProbability;
-    Realization realization = generator.next(rand);
-    TreeObservations data = realization.nextDataset(rand);
+    Realization realization = generator.next();
+    TreeObservations data = realization.nextDataset();
     return new GrowingTree(realization.trueTree, realization.trueRoot, realization.trueModel, data);
   }
 
@@ -46,11 +46,10 @@ public class TestGrowingTree {
   
   @Test
   public void testRootInvariance() {
-    Random rand = new Random(1);
     for (double anneal : Arrays.asList(0.0, 0.345, 1.0)) {
       Synthetic generator = new Synthetic();
-      Realization realization = generator.next(rand);
-      TreeObservations data = realization.nextDataset(rand);
+      Realization realization = generator.next();
+      TreeObservations data = realization.nextDataset();
       GrowingTree rooting1 = new GrowingTree(realization.trueTree, realization.trueRoot, realization.trueModel, data);
       rooting1.setLatestTipAnnealingParameter(anneal);
       final double reference = rooting1.logLikelihood();

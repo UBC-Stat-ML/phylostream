@@ -1,7 +1,7 @@
-package phylostream;
+package phylostream.io;
 
-import java.util.Random;
 
+import bayonet.distributions.Random;
 import blang.core.RealConstant;
 import blang.core.RealDistribution;
 import blang.distributions.Exponential;
@@ -27,7 +27,10 @@ import conifer.models.MultiCategorySubstitutionModel;
  * 
  * See TestSynthetic for usage.
  */
-public class Synthetic {
+public class Synthetic implements Dataset {
+  
+  @Arg @DefaultValue("1")
+  public Random rand = new Random(1);
   
   @Arg              @DefaultValue("0.01")
   public double branchMeanLength = 0.01;
@@ -53,7 +56,7 @@ public class Synthetic {
   @Arg @DefaultValue("1000")
   public int nSites = 1000;
   
-  public Realization next(Random rand) {
+  public Realization next() {
     RealDistribution branchDistribution = Exponential.distribution(new RealConstant(1.0 / branchMeanLength)); 
     UnrootedTree tree = NonClockTreePriorUtils.sample(rand, branchDistribution, TopologyUtils.syntheticTaxaList(nLeaves));
     TreeNode arbitraryRoot = arbitraryRoot(tree);
@@ -95,7 +98,7 @@ public class Synthetic {
       this.data = data;
     }
 
-    public TreeObservations nextDataset(Random rand) {
+    public TreeObservations nextDataset() {
       trueModel.generateObservationsInPlace(rand, data, trueTree, trueRoot);
       return data;
     }

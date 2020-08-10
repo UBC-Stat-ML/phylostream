@@ -14,6 +14,7 @@ import org.jgrapht.Graphs;
 import org.junit.Assert;
 
 import briefj.collections.Counter;
+import briefj.collections.UnorderedPair;
 import conifer.TopologyUtils;
 import conifer.TreeNode;
 import conifer.UnrootedTree;
