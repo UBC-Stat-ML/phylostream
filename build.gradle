@@ -50,7 +50,7 @@ xtext {
   }
 }
 
-mainClassName = "blang.runtime.internals.Main"
+mainClassName = "phylostream.blang.PhyloModel"
 
 // Creates scripts for entry points
 // Subproject must apply application plugin to be able to call this method.
@@ -80,8 +80,7 @@ startScripts.enabled = true
 run.enabled = true
 
 // Call this for each Main class you want to expose with an app script
-createScript(project, 'blang.runtime.internals.DefaultPostProcessor', 'postprocess')
-createScript(project, 'blang.runtime.internals.CreateBlangGradleProject', 'create-blang-gradle-project')
+//createScript(project, 'phylostream.blang.PhyloModel', 'phylostream')
 
 
 /* This exact task is used by the standalone compiler - do not remove or edit lightly! */
