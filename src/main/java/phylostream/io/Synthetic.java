@@ -7,6 +7,9 @@ import blang.core.RealDistribution;
 import blang.distributions.Exponential;
 import blang.inits.Arg;
 import blang.inits.DefaultValue;
+import blang.inits.GlobalArg;
+import blang.inits.experiments.ExperimentResults;
+import briefj.BriefIO;
 import conifer.EvolutionaryModel;
 import conifer.SequenceAlignment;
 import conifer.TopologyUtils;
@@ -28,6 +31,8 @@ import conifer.models.MultiCategorySubstitutionModel;
  * See TestSynthetic for usage.
  */
 public class Synthetic implements Dataset {
+  
+  @GlobalArg public ExperimentResults results = new ExperimentResults();
   
   @Arg @DefaultValue("1")
   public Random rand = new Random(1);
@@ -84,6 +89,8 @@ public class Synthetic implements Dataset {
     throw new RuntimeException();
   }
   
+  public static String GENERATING_TREE = "generatingTree.newick";
+  
   public class Realization {
     public final TreeNode trueRoot;
     public final UnrootedTree trueTree;
@@ -92,6 +99,7 @@ public class Synthetic implements Dataset {
     
     Realization(TreeNode trueRoot, UnrootedTree trueTree, EvolutionaryModel trueModel, TreeObservations data) {
       super();
+      BriefIO.stringToFile(results.getFileInResultFolder(GENERATING_TREE), trueTree.toNewick());
       this.trueRoot = trueRoot;
       this.trueTree = trueTree;
       this.trueModel = trueModel;

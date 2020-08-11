@@ -9,7 +9,6 @@ model PhyloModel {
   random BayesianPhylo tree ?: {
     if (data instanceof Synthetic) {
       val realization = data.next()
-      System.out.println("Generating tree: " + realization.trueTree)
       val dataset = realization.nextDataset()
       Globals::alignment = dataset
       val result = new BayesianPhylo(realization.trueModel, dataset, Exponential::distribution(10.0));
