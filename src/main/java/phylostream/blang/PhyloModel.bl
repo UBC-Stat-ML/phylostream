@@ -11,6 +11,7 @@ model PhyloModel {
       val realization = data.next()
       val dataset = realization.nextDataset()
       Globals::alignment = dataset
+      Globals::generatingTree = realization.trueTree
       val result = new BayesianPhylo(realization.trueModel, dataset, Exponential::distribution(10.0));
       result
     } else throw new RuntimeException
