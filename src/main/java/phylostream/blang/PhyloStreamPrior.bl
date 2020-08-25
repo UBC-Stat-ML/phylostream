@@ -1,0 +1,12 @@
+package phylostream.blang
+
+model PhyloStreamPrior {
+  random BayesianPhylo phylo
+  laws {
+    phylo is Constrained //
+    logf(phylo) { phylo.logPrior }
+  }
+  generate(rand) {
+    phylo.sampleInitialCherry(rand) 
+  }
+}

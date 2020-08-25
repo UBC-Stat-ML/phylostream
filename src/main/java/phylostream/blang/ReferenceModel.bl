@@ -1,0 +1,26 @@
+package phylostream.blang
+
+import blang.distributions.Exponential
+import conifer.EvolutionaryModel
+import conifer.SequenceAlignment
+import conifer.UnrootedTree
+import phylostream.io.Synthetic
+import phylostream.io.Synthetic.Realization
+
+import static conifer.Utils.*
+import phylostream.io.Dataset
+
+model ReferenceModel {
+  param Dataset data
+  param Realization realization ?: {
+    if (data instanceof Synthetic) data.next
+    else null
+  }
+  random SequenceAlignment observations ?: {realization.nextDataset as SequenceAlignment}
+  random UnrootedTree tree ?: unrootedTree(observations.observedTreeNodes)
+  param EvolutionaryModel evoModel ?: realization.trueModel
+  laws {
+    tree  ~ NonClockTreePrior(Exponential::distribution(10.0))
+    observations | tree, evoModel ~ UnrootedTreeLikelihood(tree, evoModel)
+  }
+}
