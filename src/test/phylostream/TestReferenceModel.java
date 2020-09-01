@@ -27,6 +27,7 @@ public class TestReferenceModel {
     synt.invariantSiteProbability = 0.0;
     synt.nPositiveCategories = 1;
     synt.nLeaves = 2;
+    synt.rateMatrix = "/conifer/ctmc/jukesCantor1969.txt";
     Realization realization = synt.next();
     SequenceAlignment alignment = (SequenceAlignment) realization.nextDataset();
     
