@@ -1,13 +1,19 @@
 package phylostream;
 
+
 import org.junit.Test;
 
+import blang.mcmc.internals.SamplerBuilderOptions;
 import blang.validation.ExactInvarianceTest;
+import blang.validation.Instance;
 import conifer.SequenceAlignment;
 import conifer.UnrootedTreeUtils;
+import conifer.moves.SingleBranchScaling;
+import conifer.moves.SingleNNI;
 import phylostream.blang.ReferenceModel;
 import phylostream.io.Synthetic;
 import phylostream.io.Synthetic.Realization;
+import phylostream.mcmc.BranchSlicerForReference;
 
 public class TestReferenceModel {
   
@@ -31,8 +37,17 @@ public class TestReferenceModel {
       setEvoModel(realization.trueModel).
         build(); 
     
-    test.add(model, 
+    SamplerBuilderOptions samplerOptions = new SamplerBuilderOptions();
+    //samplerOptions.additional.add(BranchSlicerForReference.class);
+    samplerOptions.excluded.add(SingleNNI.class);
+    //samplerOptions.excluded.add(SingleBranchScaling.class);
+    Instance<ReferenceModel> instance = new Instance<ReferenceModel>(
+        model, 
+        samplerOptions , 
         (ReferenceModel m) -> UnrootedTreeUtils.totalTreeLength(m.getTree()));
+        
+    
+    test.add(instance);
   
     test.check();
   }
