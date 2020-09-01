@@ -38,9 +38,9 @@ public class TestReferenceModel {
         build(); 
     
     SamplerBuilderOptions samplerOptions = new SamplerBuilderOptions();
-    //samplerOptions.additional.add(BranchSlicerForReference.class);
+    samplerOptions.additional.add(BranchSlicerForReference.class);
     samplerOptions.excluded.add(SingleNNI.class);
-    //samplerOptions.excluded.add(SingleBranchScaling.class);
+    samplerOptions.excluded.add(SingleBranchScaling.class);
     Instance<ReferenceModel> instance = new Instance<ReferenceModel>(
         model, 
         samplerOptions , 
