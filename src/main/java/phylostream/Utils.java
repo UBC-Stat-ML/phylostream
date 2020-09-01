@@ -125,13 +125,14 @@ public class Utils {
   
   public static void main(String [] args) {
     LinkedHashMap<TreeNode, String> data = FastaUtils.readFasta(new File("data/covid19_BC_data-July-22.fasta.gz"));
-    System.out.println(data.size());
+    System.out.println("nTaxa = " + data.size());
     Counter<Character> letters = new Counter<Character>();
     List<LinkedHashSet<Character>> sets = new ArrayList<>();
     int size = -1;
     for (String str : data.values()) {
       if (size == -1) {
         size = str.length();
+        System.out.println("nSites = " + size);
         for (int i = 0; i < size; i++)
           sets.add(new LinkedHashSet<>());
       }
