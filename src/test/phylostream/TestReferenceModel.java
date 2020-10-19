@@ -26,7 +26,8 @@ public class TestReferenceModel {
     synt.nSites = 20;
     synt.invariantSiteProbability = 0.0;
     synt.nPositiveCategories = 1;
-    synt.nLeaves = 2;
+    synt.errorProbability = 0.1;
+    synt.nLeaves = 4;
     synt.rateMatrix = "/conifer/ctmc/jukesCantor1969.txt";
     Realization realization = synt.next();
     SequenceAlignment alignment = (SequenceAlignment) realization.nextDataset();
@@ -40,8 +41,8 @@ public class TestReferenceModel {
     
     SamplerBuilderOptions samplerOptions = new SamplerBuilderOptions();
     samplerOptions.additional.add(BranchSlicerForReference.class);
-    samplerOptions.excluded.add(SingleNNI.class);
-    samplerOptions.excluded.add(SingleBranchScaling.class);
+//    samplerOptions.excluded.add(SingleNNI.class);
+//    samplerOptions.excluded.add(SingleBranchScaling.class);
     Instance<ReferenceModel> instance = new Instance<ReferenceModel>(
         model, 
         samplerOptions , 
