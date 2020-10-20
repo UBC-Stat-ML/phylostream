@@ -47,7 +47,7 @@ public class TestBayesianPhylo {
       phylo.addTipContinuousUniform(dataset.getObservedTreeNodes().get(i), rand); 
 
     List<Object> keepThem = new ArrayList<>();
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 10; i++) {
       System.out.println(i);
       keepThem.add(DeepCloner.deepClone(phylo));
     }
