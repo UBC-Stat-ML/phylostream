@@ -109,7 +109,7 @@ public class IncrementalSumProduct<N> {
    * 
    *         o 
    *         ^
-   *         | newLatestEdge
+   *         |<newLatestEdge
    *  \      |      /
    * --o-----o-----o--
    *   v           w
