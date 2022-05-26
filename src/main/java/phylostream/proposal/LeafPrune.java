@@ -2,7 +2,10 @@ package phylostream.proposal;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.jgrapht.Graphs;
 import com.google.common.collect.Lists;
@@ -12,6 +15,8 @@ import bayonet.marginal.FactorGraph;
 import bayonet.marginal.UnaryFactor;
 import bayonet.marginal.algo.SumProduct;
 import blang.core.RealConstant;
+import blang.core.RealDistribution;
+import blang.distributions.Exponential;
 import briefj.collections.UnorderedPair;
 import conifer.EvolutionaryModel;
 import conifer.TreeNode;
@@ -30,18 +35,17 @@ import phylostream.io.Synthetic;
 public class LeafPrune 
 {
 	
-  private UnrootedTree urt;  
+  private UnrootedTree urtree;  
   private TreeObservations data;
   private List<SumProduct<TreeNode>> likelihoods; 
   private EvolutionaryModel evolutionaryModel;
   
   public LeafPrune(UnrootedTree urt, TreeObservations data) {
-	  this.urt = urt;
+	  this.urtree = urt;
 	  this.data = data;	  
 	  TreeNode arbitraryRoot = Synthetic.arbitraryRoot(urt);
 	  String rateMatrix = "/phylostream/COVID_GTR.txt";	    
-	  double [][] loadedRateMatrix = SimpleRateMatrix.fromResource(rateMatrix).getRateMatrix();
-	  int [] latent2observed = new int[] {0, 1, 2, 3};	    
+	  double [][] loadedRateMatrix = SimpleRateMatrix.fromResource(rateMatrix).getRateMatrix();	    
 	  CTMCParameters ctmc = new SimpleRateMatrix(loadedRateMatrix, null);	    
 	  double invariantSiteProbability = 0.01;	    	    
 	  double shapeParameter = 1;
@@ -57,21 +61,20 @@ public class LeafPrune
   
 
   
-  public Pair<TreeNode, TreeNode>  edgeAttachedToLeaf(Random random) {
+  public Pair<TreeNode, TreeNode>  edgeAttachedToLeaf(Random random, UnrootedTree urtree) {
 	    // nothing interesting to do if tree is only a single branch
-	    List<TreeNode> internalNodes = GraphUtils.internalNodes(urt.getTopology());
+	    List<TreeNode> internalNodes = GraphUtils.internalNodes(urtree.getTopology());
 	    if (internalNodes.isEmpty())
 	    	 throw new RuntimeException("There are no internal nodes.");
 	    	    
 	    // get the leaves
-	    List<TreeNode> leavesNodes = GraphUtils.leaves(urt.getTopology()); 
+	    List<TreeNode> leavesNodes = GraphUtils.leaves(urtree.getTopology()); 
 	    		
-
 	    // pick a leaf node at random	 	    
 	    TreeNode removedLeaf = Utils.sample(leavesNodes, random);
 	    
 	    // one neighbor will from the edge to disconnect, and another one, the new root
-	    List<UnorderedPair<TreeNode,TreeNode>> neighbors = Lists.newArrayList(urt.getTopology().edgesOf(removedLeaf));
+	    List<UnorderedPair<TreeNode,TreeNode>> neighbors = Lists.newArrayList(urtree.getTopology().edgesOf(removedLeaf));
 	    
 	    System.out.println(neighbors.size());
 	    
@@ -79,9 +82,8 @@ public class LeafPrune
 	      throw new RuntimeException("Currently only supporting leaf (only 1 edge connecting to it).");
 
 	    TreeNode  removedInternalNode  = GraphUtils.pickOther(neighbors.get(0),removedLeaf);
-	    
-	    
-	    System.out.println(urt);
+	    	    
+	    System.out.println(urtree);
       
 	    System.out.println(removedLeaf);
 	    
@@ -94,28 +96,36 @@ public class LeafPrune
  
   
   
-  public void propose(Random random) {
+  public List<Pair<TreeNode,Double>> attachmentPointsLikelihoods(Random random, int N) {
 	  
-	   Pair<TreeNode, TreeNode> randomEdge = edgeAttachedToLeaf(random);
+	   List<Pair<TreeNode,Double>> result =  Lists.newArrayList();
+	  	  
+	   UnrootedTree urt = new UnrootedTree(urtree);
+	   
+	   Pair<TreeNode, TreeNode> randomEdge = edgeAttachedToLeaf(random, urt);
 	   TreeNode removedInternalNode = randomEdge.getLeft(), removedLeaf=randomEdge.getRight();
 	   	    
 	  // disconnect the leaf from the tree
 	    UnrootedTree prunedSubtree = pruneLeaf(urt, removedLeaf, removedInternalNode); 
 	    System.out.println(prunedSubtree);
-	    	    		
-	    
-	    
-	    List<UnaryFactor<TreeNode>> prunedSubtreeMarginals = EvolutionaryModelUtils.getRootMarginalsFromFactorGraphs(EvolutionaryModelUtils.buildFactorGraphs(evolutionaryModel, prunedSubtree, removedInternalNode, data), removedInternalNode);  
-	    
-	    
-	    System.out.println(prunedSubtreeMarginals.get(0).logNormalization());
-	    
-	    
-//	    prunedSubtree.updateBranchLength(prunedSubtree.getTopology().getEdge(removedLeaf, removedInternalNode), prunedSubtree.getBranchLength(removedLeaf, removedInternalNode)*2);
-	    
 
-	    List<TreeNode> attachmentPoints = addAuxiliaryInternalNodes(urt, random, removedInternalNode);
+	    List<List<UnaryFactor<TreeNode>>> prunedSubtreeMarginals = Lists.newArrayList();
 	    
+		   double  rate = 10; 
+		   RealDistribution brDist = Exponential.distribution(new RealConstant(rate));
+		
+
+	    
+	    for (int i=0;i<N;i++)
+	    {
+			double br = brDist.sample(random);
+//			System.out.println(br);
+	    	prunedSubtree.updateBranchLength(prunedSubtree.getTopology().getEdge(removedLeaf, removedInternalNode), br);	
+	    	prunedSubtreeMarginals.add(EvolutionaryModelUtils.getRootMarginalsFromFactorGraphs(EvolutionaryModelUtils.buildFactorGraphs(evolutionaryModel, prunedSubtree, removedInternalNode, data), removedInternalNode));
+	    	
+	    }
+	    
+	    List<TreeNode> attachmentPoints = addMultipleAuxiliaryInternalNodes(urt, removedInternalNode, N);	    
 	    // run the sum product on the main tree
 	    List<SumProduct<TreeNode>> mainTreeSumProducts = EvolutionaryModelUtils.getSumProductsFromFactorGraphs(EvolutionaryModelUtils.buildFactorGraphs(evolutionaryModel, urt, removedInternalNode, data, false), removedInternalNode);
 	    
@@ -127,13 +137,14 @@ public class LeafPrune
 	    System.out.println(urt);
 	    
 	    
-	    double [] samplingArray = new double[attachmentPoints.size()];
-	    for (int i = 0; i < samplingArray.length; i++)
+	   
+	    for (int i = 0; i < attachmentPoints.size(); i++)
 	    {
 //	      System.out.println("i is "+i);
 	      TreeNode attachmentPoint = attachmentPoints.get(i);
 //	      System.out.println(attachmentPoint);
-	      List<UnaryFactor<TreeNode>> currentFullUnaries = Lists.newArrayList();
+	      List<List<UnaryFactor<TreeNode>>> currentFullUnaries = Lists.newArrayList();
+	      for (int j=0; j<N; j++)  currentFullUnaries.add(Lists.newArrayList());
 	      
 	      for (int f = 0; f < mainTreeSumProducts.size(); f++)
 	      {
@@ -143,37 +154,38 @@ public class LeafPrune
 	        UnaryFactor<TreeNode> currentMainTreeMarginal = currentMainTreeSumProduct.computeMarginal(attachmentPoint);
 	        
 //	        System.out.println(currentMainTreeMarginal.logNormalization());
-	        
-	        UnaryFactor<TreeNode> prunedSubtreeMarginal = prunedSubtreeMarginals.get(f);
-	        currentFullUnaries.add(currentMainTreeSumProduct.getFactorGraph().factorOperations().pointwiseProduct(Arrays.asList(prunedSubtreeMarginal, currentMainTreeMarginal)));
+	        	
+	        for (int j=0; j<N; j++)
+	        {
+	        UnaryFactor<TreeNode> prunedSubtreeMarginal = prunedSubtreeMarginals.get(j).get(f);
+	        currentFullUnaries.get(j).add(currentMainTreeSumProduct.getFactorGraph().factorOperations().pointwiseProduct(Arrays.asList(prunedSubtreeMarginal, currentMainTreeMarginal)));
+	        }
 	      }
 	      
-
-	      LikelihoodComputationContext context = new LikelihoodComputationContext(currentFullUnaries);
-	      final double likelihood = evolutionaryModel.computeLogLikelihood(context);
+	      double likelihood = 0; 
 	      
-	      samplingArray[i] = likelihood;
-//	      System.out.println("likelihood "+likelihood);
+	      for (int j=0; j<N; j++) {
+		      LikelihoodComputationContext context = new LikelihoodComputationContext(currentFullUnaries.get(j));		      
+		      likelihood += evolutionaryModel.computeLogLikelihood(context); 	    	  	    	  
+	      }
+	      
+	      result.add(Pair.of(attachmentPoint,likelihood/N));
 	      	      
 	    }
 	    
-	    for(int i =0; i< samplingArray.length;i++)
-	    System.out.println(samplingArray[i]);
-	    
+	    return result; 	    
  }
   
-  
-  
-  
-  
-  
-  
+
+
+ 
+ 
+
   /**
-   * This splits the tree into two parts relative to the edge e=(removedRoot, detached).
-   * This will return a subtree containing e and the subtree on the side of the node detached
-   * relative to e.
-   * This instance will be modified in place to remove all the edges and nodes in the returned
-   * tree, except for the node removedRoot.  
+   * This splits the tree into two parts relative to the edge e=(removedLeaf, detachedNode).
+   * This will return a subtree containing e and the leaf. 
+   * The unrootedTree urtree will be modified to remove all the edges and nodes in the returned
+   * tree, except for the node detachedNode.  
    */
   public UnrootedTree pruneLeaf(UnrootedTree urtree, final TreeNode removedLeaf, final TreeNode detachedNode) {
     UnrootedTree result = new UnrootedTree();
@@ -181,7 +193,6 @@ public class LeafPrune
     result.addNode(detachedNode);
     result.addEdge(removedLeaf, detachedNode, urtree.getBranchLength(detachedNode, removedLeaf));
     
-
     urtree.removeEdge(detachedNode,removedLeaf);
     urtree.getTopology().removeVertex(removedLeaf);
     
@@ -197,7 +208,6 @@ public class LeafPrune
    * Iterate the edge (oriented with the provided root) and add a dummy internal node on
    * each edge, except for edges connected to current.
    * The nodes are placed at a uniform fractions from the bottom node of each edge.
-   * This modifies the tree in place.
    */
     public List<TreeNode> addAuxiliaryInternalNodes(UnrootedTree urt, Random rand, TreeNode current) {
   
@@ -224,7 +234,38 @@ public class LeafPrune
     return result;
   }
   
-  
+
+    
+    public List<TreeNode> addMultipleAuxiliaryInternalNodes(UnrootedTree urt,  TreeNode current, int N) {
+    	  
+    List<TreeNode> result = Lists.<TreeNode>newArrayList();    
+    System.out.println(current);
+    List<Pair<TreeNode, TreeNode>> _rootedEdges = urt.getRootedEdges(current);  
+    
+    for (final Pair<TreeNode, TreeNode> edge : _rootedEdges) {
+      if ((edge.getLeft().equals(current) || edge.getRight().equals(current))) {
+        result.add(current);
+      } else {
+	        double originalBL = (urt.getBranchLength(edge.getLeft(), edge.getRight())).doubleValue();
+	        double BL = originalBL/N;
+	        TreeNode dummyNode1 =  edge.getLeft(), dummyNode2=null;	        
+    	  for (int i=0;i<N;i++) {
+    	        dummyNode2 = TreeNode.nextUnlabelled();
+    	        urt.addNode(dummyNode2);
+    	        result.add(dummyNode2);
+    	        urt.addEdge(dummyNode1, dummyNode2, BL);
+    	        dummyNode1 =dummyNode2;     	            		  
+    	  } 
+    	  
+    	  urt.addEdge(dummyNode1, edge.getRight(), BL);
+    	  urt.removeEdge(edge.getLeft(), edge.getRight());
+      }
+    }
+    return result;
+  }
+    
+    
+    
   
   
   

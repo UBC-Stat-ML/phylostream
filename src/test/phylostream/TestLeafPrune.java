@@ -1,11 +1,16 @@
 package phylostream;
 
 import java.io.File;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 
 import bayonet.distributions.Random;
 import blang.runtime.Observations;
 import conifer.SequenceAlignment;
+import conifer.TreeNode;
 import conifer.UnrootedTree;
 import conifer.io.PhylogeneticObservationFactory;
 import conifer.io.TreeObservations;
@@ -28,8 +33,14 @@ public class TestLeafPrune {
 								
 		System.out.print(data);		
 				
-		LeafPrune leafPrune = new LeafPrune(urt, data);
-		leafPrune.propose(rand);
+		LeafPrune leafPrune = new LeafPrune(urt, data);		
+		
+		List<Pair<TreeNode,Double>> result = leafPrune.attachmentPointsLikelihoods(rand, 5);
+		for(int i=0; i<result.size(); i++)
+		{
+			System.out.println(result.get(i).getLeft()+": "+result.get(i).getRight());
+		}
+		
 	}
 	
 }
