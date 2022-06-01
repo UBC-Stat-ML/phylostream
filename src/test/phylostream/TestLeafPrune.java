@@ -35,12 +35,13 @@ public class TestLeafPrune {
 				
 		LeafPrune leafPrune = new LeafPrune(urt, data);		
 		
-		List<Pair<TreeNode,Double>> result = leafPrune.attachmentPointsLikelihoods(rand, 5);
-		for(int i=0; i<result.size(); i++)
-		{
-			System.out.println(result.get(i).getLeft()+": "+result.get(i).getRight());
-		}
+		Map<Pair<TreeNode,TreeNode>, Double> result = leafPrune.attachmentPointsLikelihoods(rand, 5);
 		
+		for(Pair<TreeNode,TreeNode> edge : result.keySet()) {
+			
+			System.out.println(edge+": "+result.get(edge));
+		}
+						
 	}
 	
 }

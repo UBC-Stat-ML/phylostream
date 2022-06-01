@@ -83,20 +83,20 @@ public class LeafPrune
 
 		TreeNode  removedInternalNode  = GraphUtils.pickOther(neighbors.get(0),removedLeaf);
 
-		System.out.println(urtree);
-
-		System.out.println(removedLeaf);
-
-		System.out.println(removedInternalNode);
+//		System.out.println(urtree);
+//
+//		System.out.println(removedLeaf);
+//
+//		System.out.println(removedInternalNode);
 
 		return Pair.of(removedInternalNode, removedLeaf);
 	}
 
 
 
-	public List<Pair<TreeNode,Double>> attachmentPointsLikelihoods(Random random, int N) {
+	public Map<Pair<TreeNode,TreeNode>, Double>  attachmentPointsLikelihoods(Random random, int N) {
 
-		List<Pair<TreeNode,Double>> result =  Lists.newArrayList();
+		Map<Pair<TreeNode,TreeNode>, Double> result =  new HashMap<Pair<TreeNode, TreeNode>,Double>();	
 
 		UnrootedTree urt = new UnrootedTree(urtree);
 
@@ -132,6 +132,8 @@ public class LeafPrune
 		for (Pair<TreeNode, TreeNode> edge:attachmentPointsMap.keySet()) {
 
 			List<TreeNode> attachmentPoints = attachmentPointsMap.get(edge);
+			
+			double edgeLoglikelihood = 0;  
 
 			for (int i = 0; i < attachmentPoints.size(); i++)
 			{
@@ -158,16 +160,16 @@ public class LeafPrune
 					}
 				}
 
-				double likelihood = 0; 
+				double branchLoglikelihood = 0; 
 
 				for (int j=0; j<N; j++) {
 					LikelihoodComputationContext context = new LikelihoodComputationContext(currentFullUnaries.get(j));		      
-					likelihood += evolutionaryModel.computeLogLikelihood(context); 	    	  	    	  
+					branchLoglikelihood += evolutionaryModel.computeLogLikelihood(context); 	    	  	    	  
 				}
-
-				result.add(Pair.of(attachmentPoint,likelihood/N));
-
+				edgeLoglikelihood += branchLoglikelihood/N;
 			}
+			
+			result.put(edge, edgeLoglikelihood/attachmentPoints.size());
 		}
 
 		return result; 	    
@@ -228,6 +230,8 @@ public class LeafPrune
 	}
 
 
+	
+	
 
 	public Map<Pair<TreeNode, TreeNode>, List<TreeNode>>  addMultipleAuxiliaryInternalNodes(UnrootedTree urt,  TreeNode current, int N) {
 
