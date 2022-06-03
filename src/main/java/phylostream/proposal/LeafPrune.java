@@ -14,6 +14,7 @@ import bayonet.graphs.GraphUtils;
 import bayonet.marginal.FactorGraph;
 import bayonet.marginal.UnaryFactor;
 import bayonet.marginal.algo.SumProduct;
+import bayonet.math.NumericalUtils;
 import blang.core.RealConstant;
 import blang.core.RealDistribution;
 import blang.distributions.Exponential;
@@ -112,28 +113,28 @@ public class LeafPrune
 		double  rate = 10; 
 		RealDistribution brDist = Exponential.distribution(new RealConstant(rate));
 
-
+		double br[] = new double[N]; 
 
 		for (int i=0;i<N;i++)
 		{
-			double br = brDist.sample(random);
+			br[i] = brDist.sample(random);
 			//			System.out.println(br);
-			prunedSubtree.updateBranchLength(prunedSubtree.getTopology().getEdge(removedLeaf, removedInternalNode), br);	
+			prunedSubtree.updateBranchLength(prunedSubtree.getTopology().getEdge(removedLeaf, removedInternalNode), br[i]);	
 			prunedSubtreeMarginals.add(EvolutionaryModelUtils.getRootMarginalsFromFactorGraphs(EvolutionaryModelUtils.buildFactorGraphs(evolutionaryModel, prunedSubtree, removedInternalNode, data), removedInternalNode));
 
 		}
 
-		Map<Pair<TreeNode, TreeNode>, List<TreeNode>>  attachmentPointsMap = addMultipleAuxiliaryInternalNodes(urt, removedInternalNode, N);	    
+
+		Map<Pair<TreeNode, TreeNode>, List<TreeNode>>  attachmentPointsMap = addMultipleAuxiliaryInternalNodes(urt, removedInternalNode, N);
+
 		// run the sum product on the main tree
 		List<SumProduct<TreeNode>> mainTreeSumProducts = EvolutionaryModelUtils.getSumProductsFromFactorGraphs(EvolutionaryModelUtils.buildFactorGraphs(evolutionaryModel, urt, removedInternalNode, data, false), removedInternalNode);
-
-
 
 		for (Pair<TreeNode, TreeNode> edge:attachmentPointsMap.keySet()) {
 
 			List<TreeNode> attachmentPoints = attachmentPointsMap.get(edge);
 			
-			double edgeLoglikelihood = 0;  
+			double edgeLoglikelihood = Double.NEGATIVE_INFINITY;  
 
 			for (int i = 0; i < attachmentPoints.size(); i++)
 			{
@@ -160,16 +161,15 @@ public class LeafPrune
 					}
 				}
 
-				double branchLoglikelihood = 0; 
-
+				double branchLoglikelihood = Double.NEGATIVE_INFINITY; 
 				for (int j=0; j<N; j++) {
 					LikelihoodComputationContext context = new LikelihoodComputationContext(currentFullUnaries.get(j));		      
-					branchLoglikelihood += evolutionaryModel.computeLogLikelihood(context); 	    	  	    	  
+					branchLoglikelihood = NumericalUtils.logAdd(branchLoglikelihood, evolutionaryModel.computeLogLikelihood(context)- brDist.logDensity(br[j]));
 				}
-				edgeLoglikelihood += branchLoglikelihood/N;
+				edgeLoglikelihood = NumericalUtils.logAdd(edgeLoglikelihood, branchLoglikelihood-Math.log(N));
 			}
 			
-			result.put(edge, edgeLoglikelihood/attachmentPoints.size());
+			result.put(edge, edgeLoglikelihood-Math.log(attachmentPoints.size()));
 		}
 
 		return result; 	    
@@ -242,9 +242,9 @@ public class LeafPrune
 
 		for (final Pair<TreeNode, TreeNode> edge : _rootedEdges) {
 			result.put(edge,  Lists.<TreeNode>newArrayList());
-			if ((edge.getLeft().equals(current) || edge.getRight().equals(current))) {
-				result.get(edge).add(current);
-			} else {
+//			if ((edge.getLeft().equals(current) || edge.getRight().equals(current))) {
+//				result.get(edge).add(current);
+//			} else {
 				double originalBL = (urt.getBranchLength(edge.getLeft(), edge.getRight())).doubleValue();
 				double BL = originalBL/N;
 				TreeNode dummyNode1 =  edge.getLeft(), dummyNode2=null;	        
@@ -259,7 +259,7 @@ public class LeafPrune
 				urt.addEdge(dummyNode1, edge.getRight(), BL);
 				urt.removeEdge(edge.getLeft(), edge.getRight());
 			}
-		}
+//		}
 		return result;
 	}
 

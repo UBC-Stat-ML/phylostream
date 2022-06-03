@@ -35,7 +35,7 @@ public class TestLeafPrune {
 				
 		LeafPrune leafPrune = new LeafPrune(urt, data);		
 		
-		Map<Pair<TreeNode,TreeNode>, Double> result = leafPrune.attachmentPointsLikelihoods(rand, 5);
+		Map<Pair<TreeNode,TreeNode>, Double> result = leafPrune.attachmentPointsLikelihoods(rand, 10);
 		
 		for(Pair<TreeNode,TreeNode> edge : result.keySet()) {
 			
