@@ -1,5 +1,8 @@
 package phylostream.proposal;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -40,6 +43,8 @@ public class LeafPrune
 	private TreeObservations data;
 	private List<SumProduct<TreeNode>> likelihoods; 
 	private EvolutionaryModel evolutionaryModel;
+	private UnrootedTree prunedSubtree = null; 
+	private UnrootedTree urtAfterOneLeafRemoval = null;   // tree after pruning a leaf
 
 	public LeafPrune(UnrootedTree urt, TreeObservations data) {
 		this.urtree = urt;
@@ -94,19 +99,40 @@ public class LeafPrune
 	}
 
 
+	
+	public void writePrunedSubtree(String prunedtreefile) throws IOException {		
+		File file = new File(prunedtreefile);
+		try (FileWriter fileWriter = new FileWriter(file)) {
+			fileWriter.write(prunedSubtree.toNewick());
+			fileWriter.close();
+		}		
+	}
+	
+
+	public void writeTreeAfterPruning(String filename) throws IOException {		
+		File file = new File(filename);
+		try (FileWriter fileWriter = new FileWriter(file)) {
+			fileWriter.write(urtAfterOneLeafRemoval.toNewick());
+			fileWriter.close();
+		}		
+	}
+
+		
 
 	public Map<Pair<TreeNode,TreeNode>, Double>  attachmentPointsLikelihoods(Random random, int N) {
 
 		Map<Pair<TreeNode,TreeNode>, Double> result =  new HashMap<Pair<TreeNode, TreeNode>,Double>();	
-
+		 
 		UnrootedTree urt = new UnrootedTree(urtree);
 
 		Pair<TreeNode, TreeNode> randomEdge = edgeAttachedToLeaf(random, urt);
 		TreeNode removedInternalNode = randomEdge.getLeft(), removedLeaf=randomEdge.getRight();
 
 		// disconnect the leaf from the tree
-		UnrootedTree prunedSubtree = pruneLeaf(urt, removedLeaf, removedInternalNode); 
-		System.out.println(prunedSubtree);
+		prunedSubtree = pruneLeaf(urt, removedLeaf, removedInternalNode); 
+//		System.out.println(prunedSubtree);
+		
+		urtAfterOneLeafRemoval = new UnrootedTree(urt);
 
 		List<List<UnaryFactor<TreeNode>>> prunedSubtreeMarginals = Lists.newArrayList();
 
