@@ -82,7 +82,7 @@ public class LeafPrune
 		// one neighbor will from the edge to disconnect, and another one, the new root
 		List<UnorderedPair<TreeNode,TreeNode>> neighbors = Lists.newArrayList(urtree.getTopology().edgesOf(removedLeaf));
 
-		System.out.println(neighbors.size());
+//		System.out.println(neighbors.size());
 
 		if (neighbors.size() != 1)
 			throw new RuntimeException("Currently only supporting leaf (only 1 edge connecting to it).");
@@ -233,7 +233,7 @@ public class LeafPrune
 	public List<TreeNode> addAuxiliaryInternalNodes(UnrootedTree urt, Random rand, TreeNode current) {
 
 		List<TreeNode> result = Lists.<TreeNode>newArrayList();    
-		System.out.println(current);
+//		System.out.println(current);
 		List<Pair<TreeNode, TreeNode>> _rootedEdges = urt.getRootedEdges(current);  
 
 		for (final Pair<TreeNode, TreeNode> edge : _rootedEdges) {
@@ -263,7 +263,7 @@ public class LeafPrune
 
 		Map<Pair<TreeNode, TreeNode>, List<TreeNode>> result = new HashMap<Pair<TreeNode, TreeNode>, List<TreeNode>>();	
 		//    List<TreeNode> result = Lists.<TreeNode>newArrayList();    
-		System.out.println(current);
+//		System.out.println(current);
 		List<Pair<TreeNode, TreeNode>> _rootedEdges = urt.getRootedEdges(current);  
 
 		for (final Pair<TreeNode, TreeNode> edge : _rootedEdges) {
