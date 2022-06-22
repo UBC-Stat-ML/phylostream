@@ -82,39 +82,26 @@ public class LeafPrune
 		// one neighbor will from the edge to disconnect, and another one, the new root
 		List<UnorderedPair<TreeNode,TreeNode>> neighbors = Lists.newArrayList(urtree.getTopology().edgesOf(removedLeaf));
 
-//		System.out.println(neighbors.size());
 
 		if (neighbors.size() != 1)
 			throw new RuntimeException("Currently only supporting leaf (only 1 edge connecting to it).");
 
 		TreeNode  removedInternalNode  = GraphUtils.pickOther(neighbors.get(0),removedLeaf);
 
-//		System.out.println(urtree);
-//
-//		System.out.println(removedLeaf);
-//
-//		System.out.println(removedInternalNode);
-
 		return Pair.of(removedInternalNode, removedLeaf);
 	}
 
 
 	
-	public void writePrunedSubtree(String prunedtreefile) throws IOException {		
-		File file = new File(prunedtreefile);
-		try (FileWriter fileWriter = new FileWriter(file)) {
-			fileWriter.write(prunedSubtree.toNewick());
-			fileWriter.close();
-		}		
+	
+	
+	public String getPrunedSubtree() {
+		return prunedSubtree.toNewick(); 
 	}
 	
 
-	public void writeTreeAfterPruning(String filename) throws IOException {		
-		File file = new File(filename);
-		try (FileWriter fileWriter = new FileWriter(file)) {
-			fileWriter.write(urtAfterOneLeafRemoval.toNewick());
-			fileWriter.close();
-		}		
+	public String getTreeAfterPruning() {
+		return urtAfterOneLeafRemoval.toNewick(); 
 	}
 
 		

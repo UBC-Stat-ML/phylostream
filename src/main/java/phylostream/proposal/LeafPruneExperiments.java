@@ -1,5 +1,6 @@
 package phylostream.proposal;
 import java.io.File;
+import java.io.IOException;
 import java.util.Map;
 import org.apache.commons.lang3.tuple.Pair;
 import bayonet.distributions.Random;
@@ -40,12 +41,21 @@ public class LeafPruneExperiments extends Experiment {
 		Random rand = new Random(randSeed);
 		UnrootedTree urt = UnrootedTree.fromNewick(new File(tree));
 		File file = new File(data);		
-		Observations obs = new Observations();
-		TreeObservations data = SequenceAlignment.loadObservedData(file, PhylogeneticObservationFactory.nucleotidesFactory(), obs);
-//		System.out.print(data);		
+		Observations obs = new Observations();				
+		TreeObservations data = SequenceAlignment.loadObservedData(file, PhylogeneticObservationFactory.nucleotidesFactory(), obs);		
 		LeafPrune leafPrune = new LeafPrune(urt, data);		
-		Map<Pair<TreeNode,TreeNode>, Double> re = leafPrune.attachmentPointsLikelihoods(rand, 5);
-				
+		Map<Pair<TreeNode,TreeNode>, Double> re = leafPrune.attachmentPointsLikelihoods(rand, 3);
+		
+		
+		try {
+			result.getAutoClosedBufferedWriter("urt.newick").append(urt.toNewick());
+			result.getAutoClosedBufferedWriter("prunedSubtree.newick").append(leafPrune.getPrunedSubtree());
+			result.getAutoClosedBufferedWriter("getTreeAfterPrunning.newick").append(leafPrune.getTreeAfterPruning());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	    
+
 		TabularWriter csv = result.getTabularWriter("treelikelihood");
 		for(Pair<TreeNode,TreeNode> edge : re.keySet()) {			
 			csv.write(
