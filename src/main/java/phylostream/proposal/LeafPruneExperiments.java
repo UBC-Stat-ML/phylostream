@@ -33,7 +33,10 @@ public class LeafPruneExperiments extends Experiment {
 	
 	@Arg       @DefaultValue("1")
 	public int randSeed;
-	
+
+	@Arg       @DefaultValue("10")
+	public int nReplicates;
+
 	
 	@Override
 	public void run() {
@@ -44,7 +47,7 @@ public class LeafPruneExperiments extends Experiment {
 		Observations obs = new Observations();				
 		TreeObservations data = SequenceAlignment.loadObservedData(file, PhylogeneticObservationFactory.nucleotidesFactory(), obs);		
 		LeafPrune leafPrune = new LeafPrune(urt, data);		
-		Map<Pair<TreeNode,TreeNode>, Double> re = leafPrune.attachmentPointsLikelihoods(rand, 3);
+		Map<Pair<TreeNode,TreeNode>, Double> re = leafPrune.attachmentPointsLikelihoods(rand, nReplicates);
 		UnrootedTree treeAfterPruning = leafPrune.urtAfterOneLeafRemoval();				
 		
 		try {
