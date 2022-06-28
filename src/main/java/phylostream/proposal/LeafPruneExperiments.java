@@ -50,7 +50,7 @@ public class LeafPruneExperiments extends Experiment {
 		try {
 			result.getAutoClosedBufferedWriter("urt.newick").append(urt.toNewick());
 			result.getAutoClosedBufferedWriter("prunedSubtree.newick").append(leafPrune.getPrunedSubtree());			
-			result.getAutoClosedBufferedWriter("treeAfterPrunning.newick").append(leafPrune.getTreeAfterPruning());
+			result.getAutoClosedBufferedWriter("treeAfterPruning.newick").append(leafPrune.getTreeAfterPruning());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
