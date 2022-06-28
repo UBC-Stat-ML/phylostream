@@ -45,12 +45,12 @@ public class LeafPruneExperiments extends Experiment {
 		TreeObservations data = SequenceAlignment.loadObservedData(file, PhylogeneticObservationFactory.nucleotidesFactory(), obs);		
 		LeafPrune leafPrune = new LeafPrune(urt, data);		
 		Map<Pair<TreeNode,TreeNode>, Double> re = leafPrune.attachmentPointsLikelihoods(rand, 3);
-		
+		UnrootedTree treeAfterPruning = leafPrune.urtAfterOneLeafRemoval();				
 		
 		try {
 			result.getAutoClosedBufferedWriter("urt.newick").append(urt.toNewick());
-			result.getAutoClosedBufferedWriter("prunedSubtree.newick").append(leafPrune.getPrunedSubtree());
-			result.getAutoClosedBufferedWriter("treeAfterPrunning.newick").append(leafPrune.getTreeAfterPruning());
+			result.getAutoClosedBufferedWriter("prunedSubtree.newick").append(leafPrune.getPrunedSubtree());			
+			result.getAutoClosedBufferedWriter("treeAfterPrunning.newick").append(leafPrune.getPrunedSubtree());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -59,9 +59,10 @@ public class LeafPruneExperiments extends Experiment {
 		TabularWriter csv = result.getTabularWriter("treelikelihood");
 		for(Pair<TreeNode,TreeNode> edge : re.keySet()) {			
 			csv.write(
-					org.eclipse.xtext.xbase.lib.Pair.of("node1", edge.getLeft().toString()),
-					org.eclipse.xtext.xbase.lib.Pair.of("node2", edge.getRight().toString()),
-					org.eclipse.xtext.xbase.lib.Pair.of("likelihood", re.get(edge).toString())
+					org.eclipse.xtext.xbase.lib.Pair.of("parent", edge.getLeft().toString()),
+					org.eclipse.xtext.xbase.lib.Pair.of("node", edge.getRight().toString()),
+					org.eclipse.xtext.xbase.lib.Pair.of("branch.length", treeAfterPruning.getBranchLength(edge.getLeft(), edge.getRight())), 
+                    org.eclipse.xtext.xbase.lib.Pair.of("likelihood", re.get(edge).toString())
 					);			
 		}
 		

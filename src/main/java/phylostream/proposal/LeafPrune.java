@@ -104,7 +104,12 @@ public class LeafPrune
 		return urtAfterOneLeafRemoval.toNewick(); 
 	}
 
-		
+
+	public UnrootedTree urtAfterOneLeafRemoval() {
+		return urtAfterOneLeafRemoval; 
+	}
+
+	
 
 	public Map<Pair<TreeNode,TreeNode>, Double>  attachmentPointsLikelihoods(Random random, int N) {
 
