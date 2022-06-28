@@ -91,9 +91,6 @@ public class LeafPrune
 		return Pair.of(removedInternalNode, removedLeaf);
 	}
 
-
-	
-	
 	
 	public String getPrunedSubtree() {
 		return prunedSubtree.toNewick(); 
@@ -109,7 +106,8 @@ public class LeafPrune
 		return urtAfterOneLeafRemoval; 
 	}
 
-	
+
+
 
 	public Map<Pair<TreeNode,TreeNode>, Double>  attachmentPointsLikelihoods(Random random, int N) {
 
