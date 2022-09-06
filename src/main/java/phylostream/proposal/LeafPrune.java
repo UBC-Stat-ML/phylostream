@@ -195,92 +195,142 @@ public class LeafPrune
 
 
 	
+	public double[][] multiply(double[][] A, double[][] B) {
+		//validity check
+
+		double[][] C = new double[A.length][B[0].length];
+
+		for(int i=0; i<C.length; i++){
+			for(int k=0; k<A[0].length; k++){
+				if(A[i][k]!=0){
+					for(int j=0; j<C[0].length; j++){
+						C[i][j] += A[i][k]*B[k][j];
+					}
+				}
+			}
+		}
+
+		return C;
+	}	
 	
 	
+public double[][] multiplyTransitionProbMat(double[][] A, int n){
+	if(n==1) return A; 
+	double[][] result = A; 
+	for(int i=0;i<n;i++)
+	result = multiply(result, A);
+	return(result);
+}	
 
 
-//	public Map<Pair<TreeNode,TreeNode>, Double>  attachmentPointsLikelihoods(Random random, int N) {
-//
-//		Map<Pair<TreeNode,TreeNode>, Double> result =  new HashMap<Pair<TreeNode, TreeNode>,Double>();	
-//		 
-//		UnrootedTree urt = new UnrootedTree(urtree);
-//
-//		Pair<TreeNode, TreeNode> randomEdge = edgeAttachedToLeaf(random, urt);
-//		TreeNode removedInternalNode = randomEdge.getLeft(), removedLeaf=randomEdge.getRight();
-//
-//		// disconnect the leaf from the tree
-//		prunedSubtree = pruneLeaf(urt, removedLeaf, removedInternalNode); 
-////		System.out.println(prunedSubtree);
-//		
-//		urtAfterOneLeafRemoval = new UnrootedTree(urt);
-//
-//		List<List<UnaryFactor<TreeNode>>> prunedSubtreeMarginals = Lists.newArrayList();
-//
-//		double  rate = 10; 
-//		RealDistribution brDist = Exponential.distribution(new RealConstant(rate));
-//
-//		double br[] = new double[N]; 
-//
-//		for (int i=0;i<N;i++)
-//		{
-//			br[i] = brDist.sample(random);
-//			//			System.out.println(br);
-//			prunedSubtree.updateBranchLength(prunedSubtree.getTopology().getEdge(removedLeaf, removedInternalNode), br[i]);	
-//			prunedSubtreeMarginals.add(EvolutionaryModelUtils.getRootMarginalsFromFactorGraphs(EvolutionaryModelUtils.buildFactorGraphs(evolutionaryModel, prunedSubtree, removedInternalNode, data), removedInternalNode));
-//
+
+public double[] DiagTransitionProbMatPowerN(double[][] A, int N){
+	double[][] mat = multiplyTransitionProbMat(A, N);
+	double[] result = new double[A.length];
+	for(int i=0;i<A.length;i++)
+		result[i] = mat[i][i]; 
+	return(result);
+}	
+
+
+
+public double totalVariation(double[] stationaryDist, double[] dist) {
+	if(stationaryDist.length!=dist.length) return -1;
+	double sum=0;
+	for(int i=0;i<stationaryDist.length;i++) {
+		sum = sum + 0.5*Math.abs(stationaryDist[i] - dist[i]);
+//		System.out.println(stationaryDist[i]+"-"+dist[i]);
+	}
+	return sum;
+}
+
+
+public static boolean expNormalize(double[] probs) {
+    // Input: log probabilities (unnormalized too)
+    // Output: normalized probabilities
+    // probs actually contains log probabilities; so we can add an arbitrary constant to make
+    // the largest log prob 0 to prevent overflow problems
+    double max = Double.NEGATIVE_INFINITY;
+    for(int i = 0; i < probs.length; i++)
+      max = Math.max(max, probs[i]);
+    for(int i = 0; i < probs.length; i++)
+      probs[i] = Math.exp(probs[i]-max);
+    return normalize(probs);
+  }
+
+
+public static boolean normalize(double[] data) {
+    double sum = 0;
+    for(double x : data) sum += x;
+    if(sum == 0) return false;
+    for(int i = 0; i < data.length; i++) data[i] /= sum;
+    return true;
+  }
+
+public boolean stationaryDist(double[] loglikelihoodsVec)
+{
+	return(expNormalize(loglikelihoodsVec));
+}
+
+
+public double[] totalVariationSequence(double[] likelihoodsVec, int n) {
+	double[] stationaryDist;
+	double[] result = new double[n];
+	if(stationaryDist(likelihoodsVec)) {		  
+	double[][] A= transitionProb(likelihoodsVec);  
+	
+	for(int i=0;i<n;i++) {
+	double[] dist = DiagTransitionProbMatPowerN(A, (i+1));
+	result[i]=totalVariation(likelihoodsVec,dist);
+	}}
+	return(result);
+}
+
+
+
+
+
+
+public double[] loglikelihoodsVec(Map<Pair<TreeNode,TreeNode>, Double> likelihoods) {
+	int nEdge = likelihoods.keySet().size();
+	int k= 0;
+	double[] loglikelihoodsVec = new double[nEdge];
+	for(Pair<TreeNode, TreeNode> edge:likelihoods.keySet()) {
+		loglikelihoodsVec[k] = likelihoods.get(edge); 
+		k=k+1;
+	}
+	return(loglikelihoodsVec);
+}
+	
+public double[][] transitionProb(double[] likelihoodsVec) {		
+	int nEdge=likelihoodsVec.length;	
+	double transitionProb[][] = new double[nEdge][nEdge];
+	for(int i=0;i<nEdge;i++) {
+		double sum = 1.0/nEdge;
+		for(int j=0;j<nEdge;j++)
+			if(i!=j) {
+			double mhRatio = Math.min(likelihoodsVec[j]/likelihoodsVec[i], 1);	
+			transitionProb[i][j] = (1.0/nEdge)*mhRatio; // assuming uniform prior
+			sum +=  (1.0/nEdge)*(1-mhRatio);  
+			}
+		transitionProb[i][i] = sum;    
+	}
+	
+	
+//	for(int i=0;i<nEdge;i++) { 
+//		double sum=0;
+//		for(int j=0;j<nEdge;j++) { 
+//			System.out.print(transitionProb[i][j]+" ");
+//			sum = sum+transitionProb[i][j];
 //		}
-//
-//
-//		Map<Pair<TreeNode, TreeNode>, List<TreeNode>>  attachmentPointsMap = addMultipleAuxiliaryInternalNodes(urt, removedInternalNode, N);
-//
-//		// run the sum product on the main tree
-//		List<SumProduct<TreeNode>> mainTreeSumProducts = EvolutionaryModelUtils.getSumProductsFromFactorGraphs(EvolutionaryModelUtils.buildFactorGraphs(evolutionaryModel, urt, removedInternalNode, data, false), removedInternalNode);
-//
-//		for (Pair<TreeNode, TreeNode> edge:attachmentPointsMap.keySet()) {
-//
-//			List<TreeNode> attachmentPoints = attachmentPointsMap.get(edge);
-//			
-//			double edgeLoglikelihood = Double.NEGATIVE_INFINITY;  
-//
-//			for (int i = 0; i < attachmentPoints.size(); i++)
-//			{
-//
-//				//	      System.out.println("i is "+i);
-//				TreeNode attachmentPoint = attachmentPoints.get(i);
-//				//	      System.out.println(attachmentPoint);
-//				List<List<UnaryFactor<TreeNode>>> currentFullUnaries = Lists.newArrayList();
-//				for (int j=0; j<N; j++)  currentFullUnaries.add(Lists.newArrayList());
-//
-//				for (int f = 0; f < mainTreeSumProducts.size(); f++)
-//				{
-//					SumProduct<TreeNode> currentMainTreeSumProduct = mainTreeSumProducts.get(f);
-//					//	        System.out.println("currentMainTreeSumProduct log normal "+currentMainTreeSumProduct.logNormalization());
-//
-//					UnaryFactor<TreeNode> currentMainTreeMarginal = currentMainTreeSumProduct.computeMarginal(attachmentPoint);
-//
-//					//	        System.out.println(currentMainTreeMarginal.logNormalization());
-//
-//					for (int j=0; j<N; j++)
-//					{
-//						UnaryFactor<TreeNode> prunedSubtreeMarginal = prunedSubtreeMarginals.get(j).get(f);
-//						currentFullUnaries.get(j).add(currentMainTreeSumProduct.getFactorGraph().factorOperations().pointwiseProduct(Arrays.asList(prunedSubtreeMarginal, currentMainTreeMarginal)));
-//					}
-//				}
-//
-//				double branchLoglikelihood = Double.NEGATIVE_INFINITY; 
-//				for (int j=0; j<N; j++) {
-//					LikelihoodComputationContext context = new LikelihoodComputationContext(currentFullUnaries.get(j));		      
-//					branchLoglikelihood = NumericalUtils.logAdd(branchLoglikelihood, evolutionaryModel.computeLogLikelihood(context)- brDist.logDensity(br[j]));
-//				}
-//				edgeLoglikelihood = NumericalUtils.logAdd(edgeLoglikelihood, branchLoglikelihood-Math.log(N));
-//			}
-//			
-//			result.put(edge, edgeLoglikelihood-Math.log(attachmentPoints.size()));
-//		}
-//
-//		return result; 	    
+//		System.out.println("add up to "+sum);		
 //	}
-//
+	return(transitionProb); 
+}
+	
+	
+	
+	
 
 	/**
 	 * This splits the tree into two parts relative to the edge e=(removedLeaf, detachedNode).
@@ -304,36 +354,6 @@ public class LeafPrune
 	}
 
 
-
-//	/**
-//	 * Iterate the edge (oriented with the provided root) and add a dummy internal node on
-//	 * each edge, except for edges connected to current.
-//	 * The nodes are placed at a uniform fractions from the bottom node of each edge.
-//	 */
-//	public List<TreeNode> addAuxiliaryInternalNodes(UnrootedTree urt, Random rand, TreeNode current) {
-//
-//		List<TreeNode> result = Lists.<TreeNode>newArrayList();    
-////		System.out.println(current);
-//		List<Pair<TreeNode, TreeNode>> _rootedEdges = urt.getRootedEdges(current);  
-//
-//		for (final Pair<TreeNode, TreeNode> edge : _rootedEdges) {
-//			if ((edge.getLeft().equals(current) || edge.getRight().equals(current))) {
-//				result.add(current);
-//			} else {
-//				double ratio = rand.nextDouble();
-//				double originalBL = (urt.getBranchLength(edge.getLeft(), edge.getRight())).doubleValue();
-//				double bottomBL = (ratio * originalBL);
-//				double top_BL = ((1.0 - ratio) * originalBL);
-//				urt.removeEdge(edge.getLeft(), edge.getRight());
-//				TreeNode dummyNode = TreeNode.nextUnlabelled();
-//				urt.addNode(dummyNode);
-//				urt.addEdge(edge.getLeft(), dummyNode, top_BL);
-//				urt.addEdge(dummyNode, edge.getRight(), bottomBL);
-//				result.add(dummyNode);
-//			}
-//		}
-//		return result;
-//	}
 
 
 

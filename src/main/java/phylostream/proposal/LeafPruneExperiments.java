@@ -48,6 +48,30 @@ public class LeafPruneExperiments extends Experiment {
 		TreeObservations data = SequenceAlignment.loadObservedData(file, PhylogeneticObservationFactory.nucleotidesFactory(), obs);		
 		LeafPrune leafPrune = new LeafPrune(urt, data);		
 		Map<Pair<TreeNode,TreeNode>, Double> re = leafPrune.attachmentPointsLikelihoods(rand, nReplicates);
+		double[] loglikelihoodsVec = leafPrune.loglikelihoodsVec(re);
+		
+		boolean normalized = leafPrune.stationaryDist(loglikelihoodsVec);
+		System.out.println(normalized);
+		for(int i=0;i<loglikelihoodsVec.length;i++)
+		{
+			System.out.println(loglikelihoodsVec[i]);
+		}
+		
+			
+		double[] tv = leafPrune.totalVariationSequence(loglikelihoodsVec, 10);
+		for(int i=0;i<tv.length;i++)
+		System.out.println(tv[i]);
+		
+//		double[][] mat = leafPrune.multiplyTransitionProbMat(transitionProbMat, 5);
+//		
+//		for(int i=0;i<mat.length;i++) {
+//			for(int j=0; j<mat[0].length;j++)
+//				System.out.print(mat[i][j]+" ");
+//			System.out.println();
+//		}
+//		
+		
+		
 		UnrootedTree treeAfterPruning = leafPrune.urtAfterOneLeafRemoval();				
 		
 		try {
