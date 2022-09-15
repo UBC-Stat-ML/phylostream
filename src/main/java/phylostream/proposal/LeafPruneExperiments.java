@@ -59,11 +59,11 @@ public class LeafPruneExperiments extends Experiment {
 		}
 
 		
-		double[] tv = leafPrune.totalVariationSequenceNearestNeighbor(re, 20);
+		double[] tv = leafPrune.totalVariationSequenceNearestNeighbor(re, 50);
 		for(int i=0;i<tv.length;i++)
 		System.out.println(tv[i]);
 
-		
+		System.out.println();
 			
 		tv = leafPrune.totalVariationSequence(loglikelihoodsVec, 10);
 		for(int i=0;i<tv.length;i++)

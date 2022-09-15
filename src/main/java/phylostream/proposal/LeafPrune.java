@@ -10,9 +10,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.eclipse.xtext.parser.packrat.internal.IFurtherParsable;
 import org.jgrapht.Graphs;
-import org.jgrapht.UndirectedGraph;
 
 import com.google.common.collect.Lists;
 import bayonet.distributions.Random;
@@ -229,25 +227,17 @@ public double[][] multiplyTransitionProbMat(double[][] A, int n){
 }	
 
 
-
-public double[] DiagTransitionProbMatPowerN(double[][] A, int N){
-	double[][] mat = multiplyTransitionProbMat(A, N);
-	double[] result = new double[A.length];
-	for(int i=0;i<A.length;i++)
-		result[i] = mat[i][i]; 
-	return(result);
-}	
-
-
-
-public double totalVariation(double[] stationaryDist, double[] dist) {
-	if(stationaryDist.length!=dist.length) return -1;
-	double sum=0;
-	for(int i=0;i<stationaryDist.length;i++) {
-		sum = sum + 0.5*Math.abs(stationaryDist[i] - dist[i]);
-//		System.out.println(stationaryDist[i]+"-"+dist[i]);
+public double totalVariation(double[] stationaryDist, double[][] A) {
+	if(stationaryDist.length!=A.length) return -1;
+	double tv = 0; 
+	for(int i=0; i<A.length; i++)
+	{	
+		double sum=0;
+		for(int j=0; j<stationaryDist.length; j++) 
+			sum = sum + 0.5*Math.abs(stationaryDist[j] - A[i][j]);
+		if(sum>tv) tv=sum;
 	}
-	return sum;
+	return tv;
 }
 
 
@@ -283,12 +273,10 @@ public boolean stationaryDist(double[] loglikelihoodsVec)
 public double[] totalVariationSequence(double[] likelihoodsVec, int n) {	
 	double[] result = new double[n];
 	if(stationaryDist(likelihoodsVec)) {		  
-	double[][] A= transitionProb(likelihoodsVec);  
-	
-	for(int i=0;i<n;i++) {
-	double[] dist = DiagTransitionProbMatPowerN(A, (i+1));
-	result[i]=totalVariation(likelihoodsVec,dist);
-	}}
+	double[][] A= transitionProb(likelihoodsVec);  	
+	for(int i=0;i<n;i++) 	
+	result[i]=totalVariation(likelihoodsVec,multiplyTransitionProbMat(A, (i+1)));
+	}
 	return(result);
 }
 
@@ -299,10 +287,9 @@ public double[] totalVariationSequenceNearestNeighbor(Map<Pair<TreeNode,TreeNode
 	double[] likelihoodsVec=loglikelihoodsVec(likelihoods);
 	if(stationaryDist(likelihoodsVec)) {		  
 	double[][] A= transitionProb(urtAfterOneLeafRemoval, likelihoods,1);  
-	for(int i=0;i<n;i++) {
-	double[] dist = DiagTransitionProbMatPowerN(A, (i+1));
-	result[i]=totalVariation(likelihoodsVec,dist);
-	}}
+	for(int i=0;i<n;i++) 	
+	result[i]=totalVariation(likelihoodsVec,multiplyTransitionProbMat(A, (i+1)));
+	}
 	return(result);
 }
 
