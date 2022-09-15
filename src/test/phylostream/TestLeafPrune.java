@@ -1,6 +1,7 @@
 package phylostream;
 
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -43,4 +44,33 @@ public class TestLeafPrune {
 						
 	}
 	
+	
+	@Test
+	public void findNearestNeighborsOfAnEdge() {
+				
+		String tree = "data/data27-1949.nex.run1.newick";
+		UnrootedTree urt = UnrootedTree.fromNewick(new File(tree));
+		
+		Random rand = new Random(1);
+		
+		File file = new File("data/M336_27.fasta");
+		Observations obs = new Observations();
+		TreeObservations data = SequenceAlignment.loadObservedData(file, PhylogeneticObservationFactory.nucleotidesFactory(), obs);
+								
+		
+		LeafPrune leafPrune = new LeafPrune(urt, data);		
+		int nReplicates =5;
+		Map<Pair<TreeNode,TreeNode>, Double> re = leafPrune.attachmentPointsLikelihoods(rand, nReplicates);		
+
+		
+		for(Pair<TreeNode,TreeNode> key : re.keySet())
+		{
+			List<Pair<TreeNode,TreeNode>> neighborList = leafPrune.neighborhoods(urt, key);
+			System.out.println("The neighbors of "+key.getLeft() + " "+ key.getRight()+" are: ");
+			for(Pair<TreeNode,TreeNode> neighbor: neighborList)
+				System.out.println(neighbor.getLeft()+" "+ neighbor.getRight());
+		}
+
+						
+	}
 }

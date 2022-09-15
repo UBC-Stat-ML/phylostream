@@ -1,13 +1,19 @@
 package phylostream.proposal;
 
+//import bayonet.distributions.Multinomial;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.eclipse.xtext.parser.packrat.internal.IFurtherParsable;
 import org.jgrapht.Graphs;
+import org.jgrapht.UndirectedGraph;
+
 import com.google.common.collect.Lists;
 import bayonet.distributions.Random;
 import bayonet.graphs.GraphUtils;
@@ -31,6 +37,7 @@ import conifer.models.EvolutionaryModelUtils;
 import conifer.models.LikelihoodComputationContext;
 import conifer.models.MultiCategorySubstitutionModel;
 import phylostream.io.Synthetic;
+import org.jgrapht.Graphs;
 
 
 public class LeafPrune 
@@ -42,6 +49,7 @@ public class LeafPrune
 	private EvolutionaryModel evolutionaryModel;
 	private UnrootedTree prunedSubtree = null; 
 	private UnrootedTree urtAfterOneLeafRemoval = null;   // tree after pruning a leaf
+	
 
 	public LeafPrune(UnrootedTree urt, TreeObservations data) {
 		this.urtree = urt;
@@ -195,9 +203,7 @@ public class LeafPrune
 
 
 	
-	public double[][] multiply(double[][] A, double[][] B) {
-		//validity check
-
+public double[][] multiply(double[][] A, double[][] B) {
 		double[][] C = new double[A.length][B[0].length];
 
 		for(int i=0; i<C.length; i++){
@@ -273,8 +279,8 @@ public boolean stationaryDist(double[] loglikelihoodsVec)
 }
 
 
-public double[] totalVariationSequence(double[] likelihoodsVec, int n) {
-	double[] stationaryDist;
+
+public double[] totalVariationSequence(double[] likelihoodsVec, int n) {	
 	double[] result = new double[n];
 	if(stationaryDist(likelihoodsVec)) {		  
 	double[][] A= transitionProb(likelihoodsVec);  
@@ -288,6 +294,17 @@ public double[] totalVariationSequence(double[] likelihoodsVec, int n) {
 
 
 
+public double[] totalVariationSequenceNearestNeighbor(Map<Pair<TreeNode,TreeNode>, Double> likelihoods, int n) {	
+	double[] result = new double[n];
+	double[] likelihoodsVec=loglikelihoodsVec(likelihoods);
+	if(stationaryDist(likelihoodsVec)) {		  
+	double[][] A= transitionProb(urtAfterOneLeafRemoval, likelihoods,1);  
+	for(int i=0;i<n;i++) {
+	double[] dist = DiagTransitionProbMatPowerN(A, (i+1));
+	result[i]=totalVariation(likelihoodsVec,dist);
+	}}
+	return(result);
+}
 
 
 
@@ -316,7 +333,6 @@ public double[][] transitionProb(double[] likelihoodsVec) {
 		transitionProb[i][i] = sum;    
 	}
 	
-	
 //	for(int i=0;i<nEdge;i++) { 
 //		double sum=0;
 //		for(int j=0;j<nEdge;j++) { 
@@ -328,7 +344,77 @@ public double[][] transitionProb(double[] likelihoodsVec) {
 	return(transitionProb); 
 }
 	
+
+
+
+public double[][] transitionProb(UnrootedTree urt, Map<Pair<TreeNode,TreeNode>, Double> likelihoods, int neighborSize) {	
+	Set<Pair<TreeNode,TreeNode>> edgeSet = likelihoods.keySet();
+	int nEdge=edgeSet.size();	
+	double transitionProb[][] = new double[nEdge][nEdge];
+	int i = 0; 
+	for(Pair<TreeNode,TreeNode> edge:edgeSet)
+	{
+		List<Pair<TreeNode,TreeNode>>  neighbors = neighborhoods(urt, edge);
+		int neighborNums = neighbors.size()+1;		
+		double sum = 1.0/neighborNums;
+		int j=0;
+		double mhRatio =  0; 
+		for(Pair<TreeNode,TreeNode> edge2:edgeSet)
+		{
+			if(!edge.equals(edge2))
+			{
+				List<Pair<TreeNode, TreeNode>> unorderedEdge = Lists.newArrayList();
+				unorderedEdge.add(edge2);
+				unorderedEdge.add(Pair.of(edge2.getRight(), edge2.getLeft()));
+				if(!Collections.disjoint(unorderedEdge, neighbors)) {
+				mhRatio = Math.min(likelihoods.get(edge2)/likelihoods.get(edge), 1); 										
+				transitionProb[i][j] = (1.0/neighborNums)*mhRatio; // assuming uniform prior in the neighborhood
+				sum +=  (1.0/neighborNums)*(1-mhRatio);  
+				}
+			}
+			j++;
+		}
+		transitionProb[i][i] = sum;  
+		i++;
+	}
 	
+	
+	
+	for(int k=0;k<nEdge;k++) { 
+		double sum=0;
+		for(int j=0;j<nEdge;j++) { 
+			System.out.print(transitionProb[k][j]+" ");
+			sum = sum+transitionProb[k][j];
+		}
+		System.out.println("add up to "+sum);		
+	}
+	return(transitionProb); 
+}
+
+
+
+
+public List<Pair<TreeNode,TreeNode>>  neighborhoods(UnrootedTree urt, Pair<TreeNode, TreeNode> edge) {
+	TreeNode left = edge.getLeft();
+	TreeNode right = edge.getRight();	
+	List<TreeNode>  leftNodeNeighbors  = Graphs.neighborListOf(urt.getTopology(), left);
+	List<TreeNode>  rightNodeNeighbors = Graphs.neighborListOf(urt.getTopology(), right);
+	leftNodeNeighbors.remove(right);
+	rightNodeNeighbors.remove(left);
+	List<Pair<TreeNode,TreeNode>> result = Lists.newArrayList(); 	
+	for (TreeNode node : leftNodeNeighbors)
+		result.add(Pair.of(left,node));   		
+	for (TreeNode node : rightNodeNeighbors)
+		result.add(Pair.of(right,node));  
+    return result;
+}
+
+
+
+
+
+
+
 	
 	
 
@@ -399,7 +485,6 @@ public double[][] transitionProb(double[] likelihoodsVec) {
 					urt.addEdge(dummyNode1, dummyNode2, BL);
 					dummyNode1 =dummyNode2;     	            		  
 				} 
-
 				urt.addEdge(dummyNode1, edge.getRight(), BL);
 				urt.removeEdge(edge.getLeft(), edge.getRight());
 			}

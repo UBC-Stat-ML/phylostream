@@ -1,6 +1,7 @@
 package phylostream.proposal;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.tuple.Pair;
 import bayonet.distributions.Random;
@@ -47,7 +48,7 @@ public class LeafPruneExperiments extends Experiment {
 		Observations obs = new Observations();				
 		TreeObservations data = SequenceAlignment.loadObservedData(file, PhylogeneticObservationFactory.nucleotidesFactory(), obs);		
 		LeafPrune leafPrune = new LeafPrune(urt, data);		
-		Map<Pair<TreeNode,TreeNode>, Double> re = leafPrune.attachmentPointsLikelihoods(rand, nReplicates);
+		Map<Pair<TreeNode,TreeNode>, Double> re = leafPrune.attachmentPointsLikelihoods(rand, nReplicates);		
 		double[] loglikelihoodsVec = leafPrune.loglikelihoodsVec(re);
 		
 		boolean normalized = leafPrune.stationaryDist(loglikelihoodsVec);
@@ -56,23 +57,21 @@ public class LeafPruneExperiments extends Experiment {
 		{
 			System.out.println(loglikelihoodsVec[i]);
 		}
+
 		
-			
-		double[] tv = leafPrune.totalVariationSequence(loglikelihoodsVec, 10);
+		double[] tv = leafPrune.totalVariationSequenceNearestNeighbor(re, 20);
 		for(int i=0;i<tv.length;i++)
 		System.out.println(tv[i]);
+
 		
-//		double[][] mat = leafPrune.multiplyTransitionProbMat(transitionProbMat, 5);
-//		
-//		for(int i=0;i<mat.length;i++) {
-//			for(int j=0; j<mat[0].length;j++)
-//				System.out.print(mat[i][j]+" ");
-//			System.out.println();
-//		}
-//		
+			
+		tv = leafPrune.totalVariationSequence(loglikelihoodsVec, 10);
+		for(int i=0;i<tv.length;i++)
+		System.out.println(tv[i]);
+	
 		
+		UnrootedTree treeAfterPruning = leafPrune.urtAfterOneLeafRemoval();		
 		
-		UnrootedTree treeAfterPruning = leafPrune.urtAfterOneLeafRemoval();				
 		
 		try {
 			result.getAutoClosedBufferedWriter("urt.newick").append(urt.toNewick());
