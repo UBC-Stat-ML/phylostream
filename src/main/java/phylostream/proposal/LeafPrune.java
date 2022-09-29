@@ -22,6 +22,7 @@ import bayonet.math.NumericalUtils;
 import blang.core.RealConstant;
 import blang.core.RealDistribution;
 import blang.distributions.Exponential;
+import briefj.Indexer;
 import briefj.collections.UnorderedPair;
 import conifer.EvolutionaryModel;
 import conifer.TreeNode;
@@ -218,17 +219,40 @@ public double[][] multiply(double[][] A, double[][] B) {
 	}	
 	
 	
-public double[][] multiplyTransitionProbMat(double[][] A, int n){
-	if(n==1) return A; 
-	double[][] result = A; 
-	for(int i=0;i<n;i++)
-	result = multiply(result, A);
+//public double[][] multiplyTransitionProbMat(double[][] A, int n){
+//	if(n==1) return A; 
+//	double[][] result = A; 
+//	for(int i=0;i<n;i++)
+//	result = multiply(result, A);
+//	return(result);
+//}
+
+
+public static int log2(int N)
+{
+    // calculate log2 N indirectly
+    // using log() method
+    int result = (int)(Math.log(N) / Math.log(2));
+    return result;
+}
+
+
+public double[][] multiplyTransitionProbMat(double[][] A, int K){
+	
+	if(K==1) return A; 
+	double[][] result=A;  			
+	for(int k=0; k<K;k++)
+	{
+		result = multiply(result, result);
+	}	
 	return(result);
-}	
+}
+
+
 
 
 public double totalVariation(double[] stationaryDist, double[][] A) {
-	if(stationaryDist.length!=A.length) return -1;
+	if(stationaryDist.length!=A.length) throw new RuntimeException("Length of A doesn't match the length of the stationary distribution!");
 	double tv = 0; 
 	for(int i=0; i<A.length; i++)
 	{	
@@ -269,10 +293,9 @@ public boolean stationaryDist(double[] loglikelihoodsVec)
 }
 
 
-
 public double[] totalVariationSequence(double[] likelihoodsVec, int n) {	
 	double[] result = new double[n];
-	if(stationaryDist(likelihoodsVec)) {		  
+	if(stationaryDist(likelihoodsVec)) {	  //	likelihoodsVec expNormalized  
 	double[][] A= transitionProb(likelihoodsVec);  	
 	for(int i=0;i<n;i++) 	
 	result[i]=totalVariation(likelihoodsVec,multiplyTransitionProbMat(A, (i+1)));
@@ -281,18 +304,17 @@ public double[] totalVariationSequence(double[] likelihoodsVec, int n) {
 }
 
 
-
-public double[] totalVariationSequenceNearestNeighbor(Map<Pair<TreeNode,TreeNode>, Double> likelihoods, int n) {	
-	double[] result = new double[n];
+public double[] totalVariationSequenceNearestNeighbor(Map<Pair<TreeNode,TreeNode>, Double> likelihoods, int K, int neighborSize) {
+//	int K = log2(n);
+	double[] result = new double[K];
 	double[] likelihoodsVec=loglikelihoodsVec(likelihoods);
-	if(stationaryDist(likelihoodsVec)) {		  
-	double[][] A= transitionProb(urtAfterOneLeafRemoval, likelihoods,1);  
-	for(int i=0;i<n;i++) 	
+	if(stationaryDist(likelihoodsVec)) {		   //	likelihoodsVec expNormalized
+	double[][] A= transitionProb(urtAfterOneLeafRemoval, likelihoods, neighborSize);  // Note likelihoods are in log scale  
+	for(int i=0;i<K;i++) 	
 	result[i]=totalVariation(likelihoodsVec,multiplyTransitionProbMat(A, (i+1)));
 	}
 	return(result);
 }
-
 
 
 public double[] loglikelihoodsVec(Map<Pair<TreeNode,TreeNode>, Double> likelihoods) {
@@ -332,52 +354,49 @@ public double[][] transitionProb(double[] likelihoodsVec) {
 }
 	
 
-
-
-public double[][] transitionProb(UnrootedTree urt, Map<Pair<TreeNode,TreeNode>, Double> likelihoods, int neighborSize) {	
+public double[][] transitionProb(UnrootedTree urt, Map<Pair<TreeNode,TreeNode>, Double> likelihoods, int neighborSize) {
+	
 	Set<Pair<TreeNode,TreeNode>> edgeSet = likelihoods.keySet();
-	int nEdge=edgeSet.size();	
+	Indexer<Pair<TreeNode,TreeNode>> index = new Indexer<Pair<TreeNode,TreeNode>>(edgeSet);		
+	int nEdge=index.size();	
+	System.out.println("Edge number is "+ nEdge);
 	double transitionProb[][] = new double[nEdge][nEdge];
-	int i = 0; 
-	for(Pair<TreeNode,TreeNode> edge:edgeSet)
-	{
-		List<Pair<TreeNode,TreeNode>>  neighbors = neighborhoods(urt, edge);
-		int neighborNums = neighbors.size()+1;		
+	for(int i = 0; i< nEdge; i++)
+	{		
+		Pair<TreeNode, TreeNode> edge =  index.i2o(i); 
+		List<Pair<TreeNode,TreeNode>>  neighbors = neighborhoods(urt, edge, neighborSize);
+		int neighborNums = neighbors.size()+1;
+//		System.out.println("Neighbor size is "+ neighborNums);
 		double sum = 1.0/neighborNums;
-		int j=0;
-		double mhRatio =  0; 
-		for(Pair<TreeNode,TreeNode> edge2:edgeSet)
+		for(int j=0; j< nEdge; j++)
 		{
-			if(!edge.equals(edge2))
-			{
-				List<Pair<TreeNode, TreeNode>> unorderedEdge = Lists.newArrayList();
-				unorderedEdge.add(edge2);
-				unorderedEdge.add(Pair.of(edge2.getRight(), edge2.getLeft()));
-				if(!Collections.disjoint(unorderedEdge, neighbors)) {
-				mhRatio = Math.min(likelihoods.get(edge2)/likelihoods.get(edge), 1); 										
-				transitionProb[i][j] = (1.0/neighborNums)*mhRatio; // assuming uniform prior in the neighborhood
-				sum +=  (1.0/neighborNums)*(1-mhRatio);  
-				}
+			if(i!=j) {
+			List<Pair<TreeNode, TreeNode>> unorderedEdge = Lists.newArrayList();
+			Pair<TreeNode, TreeNode> edge2 = index.i2o(j); 
+			unorderedEdge.add(edge2);
+			unorderedEdge.add(Pair.of(edge2.getRight(), edge2.getLeft()));
+			if(!Collections.disjoint(unorderedEdge, neighbors)) { 	
+			double mhRatio = Math.exp(Math.min(likelihoods.get(edge2)-likelihoods.get(edge), 0));
+			if(mhRatio==0.0) System.out.println("WARNING: MH is 0!!");
+			transitionProb[i][j] = (1.0/neighborNums)*mhRatio; // assuming uniform prior in the neighborhood
+			sum +=  (1.0/neighborNums)*(1-mhRatio);  
 			}
-			j++;
 		}
-		transitionProb[i][i] = sum;  
-		i++;
-	}
-	
-	
-	
-	for(int k=0;k<nEdge;k++) { 
-		double sum=0;
-		for(int j=0;j<nEdge;j++) { 
-			System.out.print(transitionProb[k][j]+" ");
-			sum = sum+transitionProb[k][j];
 		}
-		System.out.println("add up to "+sum);		
+			transitionProb[i][i] = sum;	
 	}
+			
+//	for(int k=0;k<nEdge;k++) { 
+//		System.out.print(k+": ");
+//		double sum=0;
+//		for(int j=0;j<nEdge;j++) { 
+//			System.out.print(transitionProb[k][j]+" ");
+//			sum = sum+transitionProb[k][j];
+//		}
+//		System.out.println("add up to "+sum);		
+//	}
 	return(transitionProb); 
 }
-
 
 
 
@@ -394,6 +413,45 @@ public List<Pair<TreeNode,TreeNode>>  neighborhoods(UnrootedTree urt, Pair<TreeN
 	for (TreeNode node : rightNodeNeighbors)
 		result.add(Pair.of(right,node));  
     return result;
+}
+
+
+public List<Pair<TreeNode,TreeNode>>  neighborhoods(UnrootedTree urt, Pair<TreeNode, TreeNode> edge, int radius) {
+	List<Pair<TreeNode,TreeNode>> result = Lists.newArrayList(); 	
+	result.addAll(descendant(urt, edge, radius)); 
+	result.addAll(descendant(urt, Pair.of(edge.getRight(), edge.getLeft()), radius)); 	
+    return result;
+}
+
+public List<Pair<TreeNode,TreeNode>>  descendant(UnrootedTree urt, Pair<TreeNode, TreeNode> edge, int radius)
+{
+	List<Pair<TreeNode,TreeNode>> result = Lists.newArrayList(); 		
+	List<Pair<TreeNode,TreeNode>> edges = Lists.newArrayList();
+	edges.add(edge);
+	for(int i=0; i<radius; i++)
+	{
+		List<Pair<TreeNode,TreeNode>> children = Lists.newArrayList();
+		for(Pair<TreeNode,TreeNode> edge0: edges)
+			children.addAll(children(urt, edge0));
+		result.addAll(children);
+		edges.removeAll(edges); 
+		edges.addAll(children);			
+	}
+   return result;
+}
+
+
+
+public List<Pair<TreeNode,TreeNode>>  children(UnrootedTree urt, Pair<TreeNode, TreeNode> edge)
+{
+	TreeNode left = edge.getLeft();
+	TreeNode right = edge.getRight();	
+	List<TreeNode>  rightNodeNeighbors = Graphs.neighborListOf(urt.getTopology(), right);
+	rightNodeNeighbors.remove(left);	
+	List<Pair<TreeNode,TreeNode>> result = Lists.newArrayList(); 	
+	for (TreeNode node : rightNodeNeighbors)
+		result.add(Pair.of(right,node));  
+    return result; 
 }
 
 

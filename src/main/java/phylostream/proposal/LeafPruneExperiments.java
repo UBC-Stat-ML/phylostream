@@ -51,28 +51,32 @@ public class LeafPruneExperiments extends Experiment {
 		Map<Pair<TreeNode,TreeNode>, Double> re = leafPrune.attachmentPointsLikelihoods(rand, nReplicates);		
 		double[] loglikelihoodsVec = leafPrune.loglikelihoodsVec(re);
 		
-		boolean normalized = leafPrune.stationaryDist(loglikelihoodsVec);
-		System.out.println(normalized);
-		for(int i=0;i<loglikelihoodsVec.length;i++)
+//		boolean normalized = leafPrune.stationaryDist(loglikelihoodsVec);
+//		System.out.println(normalized);
+//		for(int i=0;i<loglikelihoodsVec.length;i++)
+//		{
+//			System.out.println(loglikelihoodsVec[i]);
+//		}
+
+		//int[] neighborhoodRadius = new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,16,17,18,19,20,21,22,23,24,25};
+		
+		int[] neighborhoodRadius = new int[] {7};
+		for(int k=0;k<neighborhoodRadius.length;k++)
 		{
-			System.out.println(loglikelihoodsVec[i]);
+			double[] tv = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, neighborhoodRadius[k]);	
+			TabularWriter tvFile = result.getTabularWriter("totalVariation_"+neighborhoodRadius[k]);
+			for(int i=0; i<tv.length; i++)
+			{			
+				tvFile.write(
+						org.eclipse.xtext.xbase.lib.Pair.of("neighborhoodRadius", neighborhoodRadius[k]),
+						org.eclipse.xtext.xbase.lib.Pair.of("log2n", i),
+						org.eclipse.xtext.xbase.lib.Pair.of("tv", tv[i])
+						);
+			}			
+
 		}
-
-		
-		double[] tv = leafPrune.totalVariationSequenceNearestNeighbor(re, 50);
-		for(int i=0;i<tv.length;i++)
-		System.out.println(tv[i]);
-
-		System.out.println();
-			
-		tv = leafPrune.totalVariationSequence(loglikelihoodsVec, 10);
-		for(int i=0;i<tv.length;i++)
-		System.out.println(tv[i]);
-	
-		
-		UnrootedTree treeAfterPruning = leafPrune.urtAfterOneLeafRemoval();		
-		
-		
+				
+		UnrootedTree treeAfterPruning = leafPrune.urtAfterOneLeafRemoval();					
 		try {
 			result.getAutoClosedBufferedWriter("urt.newick").append(urt.toNewick());
 			result.getAutoClosedBufferedWriter("prunedSubtree.newick").append(leafPrune.getPrunedSubtree());			
