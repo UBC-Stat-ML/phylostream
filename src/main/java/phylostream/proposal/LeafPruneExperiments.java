@@ -58,19 +58,22 @@ public class LeafPruneExperiments extends Experiment {
 //			System.out.println(loglikelihoodsVec[i]);
 //		}
 
-		//int[] neighborhoodRadius = new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,16,17,18,19,20,21,22,23,24,25};
+		int[] neighborhoodRadius = new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,16,17,18,19,20,21,22,23,24,25};
 		
-		int[] neighborhoodRadius = new int[] {7};
 		for(int k=0;k<neighborhoodRadius.length;k++)
 		{
-			double[] tv = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, neighborhoodRadius[k]);	
+			double[] tv0 = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, neighborhoodRadius[k], 0.000001);
+			double[] tvHalf = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, neighborhoodRadius[k], 0.5);			
+			double[] tv1 = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, neighborhoodRadius[k], 1.0);
 			TabularWriter tvFile = result.getTabularWriter("totalVariation_"+neighborhoodRadius[k]);
-			for(int i=0; i<tv.length; i++)
+			for(int i=0; i<tvHalf.length; i++)
 			{			
 				tvFile.write(
 						org.eclipse.xtext.xbase.lib.Pair.of("neighborhoodRadius", neighborhoodRadius[k]),
 						org.eclipse.xtext.xbase.lib.Pair.of("log2n", i),
-						org.eclipse.xtext.xbase.lib.Pair.of("tv", tv[i])
+						org.eclipse.xtext.xbase.lib.Pair.of("tv0", tv0[i]), 
+						org.eclipse.xtext.xbase.lib.Pair.of("tvHalf", tvHalf[i]),
+						org.eclipse.xtext.xbase.lib.Pair.of("tv1", tv1[i])
 						);
 			}			
 
