@@ -476,8 +476,7 @@ public double[][] transitionProb(UnrootedTree urt, Map<Pair<TreeNode,TreeNode>, 
 			if(i!=j) {
 //			if(neighborLikelihood[i][j]!= Double.NEGATIVE_INFINITY) {	
 			if(weights[i][j]!= 0.0) {
-			double mhRatio = Math.min(Math.exp(neighborLikelihood[i][j] - neighborLikelihood[i][i])*weights[i][i]/weights[i][j], 1);
-//			System.out.println(neighborLikelihood[i][j]+" "+ neighborLikelihood[i][i]+" "+weights[i][i]+" "+weights[i][j]+" "+mhRatio);
+			double mhRatio = Math.min(Math.exp(neighborLikelihood[i][j] - neighborLikelihood[i][i])*weights[j][i]/weights[i][j], 1);
 			if(mhRatio==0.0) System.out.println("WARNING: MH is 0!!");
 			transitionProb[i][j] = weights[i][j] *mhRatio; 
 			sum +=  weights[i][j]*(1-mhRatio);  

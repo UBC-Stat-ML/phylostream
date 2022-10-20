@@ -49,7 +49,7 @@ public class LeafPruneExperiments extends Experiment {
 		TreeObservations data = SequenceAlignment.loadObservedData(file, PhylogeneticObservationFactory.nucleotidesFactory(), obs);		
 		LeafPrune leafPrune = new LeafPrune(urt, data);		
 		Map<Pair<TreeNode,TreeNode>, Double> re = leafPrune.attachmentPointsLikelihoods(rand, nReplicates);		
-		double[] loglikelihoodsVec = leafPrune.loglikelihoodsVec(re);
+//		double[] loglikelihoodsVec = leafPrune.loglikelihoodsVec(re);
 		
 //		boolean normalized = leafPrune.stationaryDist(loglikelihoodsVec);
 //		System.out.println(normalized);
