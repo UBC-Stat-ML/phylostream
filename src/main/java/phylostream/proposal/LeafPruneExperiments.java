@@ -2,6 +2,8 @@ package phylostream.proposal;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 import org.apache.commons.lang3.tuple.Pair;
 import bayonet.distributions.Random;
@@ -37,8 +39,11 @@ public class LeafPruneExperiments extends Experiment {
 
 	@Arg       @DefaultValue("10")
 	public int nReplicates;
-
 	
+	@Arg       @DefaultValue("5")
+	public int maxNeighborhoodRadius;  
+	
+
 	@Override
 	public void run() {
 		
@@ -48,28 +53,20 @@ public class LeafPruneExperiments extends Experiment {
 		Observations obs = new Observations();				
 		TreeObservations data = SequenceAlignment.loadObservedData(file, PhylogeneticObservationFactory.nucleotidesFactory(), obs);		
 		LeafPrune leafPrune = new LeafPrune(urt, data);		
-		Map<Pair<TreeNode,TreeNode>, Double> re = leafPrune.attachmentPointsLikelihoods(rand, nReplicates);		
-//		double[] loglikelihoodsVec = leafPrune.loglikelihoodsVec(re);
+		Map<Pair<TreeNode,TreeNode>, Double> re = leafPrune.attachmentPointsLikelihoods(rand, nReplicates);
 		
-//		boolean normalized = leafPrune.stationaryDist(loglikelihoodsVec);
-//		System.out.println(normalized);
-//		for(int i=0;i<loglikelihoodsVec.length;i++)
-//		{
-//			System.out.println(loglikelihoodsVec[i]);
-//		}
-
-		int[] neighborhoodRadius = new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,16,17,18,19,20,21,22,23,24,25};
 		
-		for(int k=0;k<neighborhoodRadius.length;k++)
+		for(Integer k=0;k<maxNeighborhoodRadius;k++)
 		{
-			double[] tv0 = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, neighborhoodRadius[k], 0.000001);
-			double[] tvHalf = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, neighborhoodRadius[k], 0.5);			
-			double[] tv1 = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, neighborhoodRadius[k], 1.0);
-			TabularWriter tvFile = result.getTabularWriter("totalVariation_"+neighborhoodRadius[k]);
+			System.out.println(k);
+			double[] tv0 = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, k, 0.000001);
+			double[] tvHalf = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, k, 0.5);			
+			double[] tv1 = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, k, 1.0);
+			TabularWriter tvFile = result.getTabularWriter("totalVariation_"+k);
 			for(int i=0; i<tvHalf.length; i++)
 			{			
 				tvFile.write(
-						org.eclipse.xtext.xbase.lib.Pair.of("neighborhoodRadius", neighborhoodRadius[k]),
+						org.eclipse.xtext.xbase.lib.Pair.of("neighborhoodRadius", k),
 						org.eclipse.xtext.xbase.lib.Pair.of("log2n", i),
 						org.eclipse.xtext.xbase.lib.Pair.of("tv0", tv0[i]), 
 						org.eclipse.xtext.xbase.lib.Pair.of("tvHalf", tvHalf[i]),
