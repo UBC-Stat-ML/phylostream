@@ -1,9 +1,6 @@
 package phylostream.proposal;
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Map;
 import org.apache.commons.lang3.tuple.Pair;
 import bayonet.distributions.Random;
@@ -56,7 +53,7 @@ public class LeafPruneExperiments extends Experiment {
 		Map<Pair<TreeNode,TreeNode>, Double> re = leafPrune.attachmentPointsLikelihoods(rand, nReplicates);
 		
 		
-		for(Integer k=0;k<maxNeighborhoodRadius;k++)
+		for(Integer k=1;k<=maxNeighborhoodRadius;k++)
 		{
 			System.out.println(k);
 			double[] tv0 = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, k, 0.000001);
