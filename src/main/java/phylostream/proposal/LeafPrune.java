@@ -47,7 +47,8 @@ public class LeafPrune
 	private EvolutionaryModel evolutionaryModel;
 	private UnrootedTree prunedSubtree = null; 
 	private UnrootedTree urtAfterOneLeafRemoval = null;   // tree after pruning a leaf
-	
+	private int[]  edgeNumbers; 
+	private int edgeNumberInNeighbor; 
 
 	public LeafPrune(UnrootedTree urt, TreeObservations data) {
 		this.urtree = urt;
@@ -389,10 +390,12 @@ public double[][] neighborLikelihood(UnrootedTree urt, Map<Pair<TreeNode,TreeNod
 	int nEdge=index.size();	
 	System.out.println("Edge number is "+ nEdge);
 	double neighborLikelihood[][] = new double[nEdge][nEdge];
+		
 	for(int i = 0; i< nEdge; i++)
 	{		
 		Pair<TreeNode, TreeNode> edge =  index.i2o(i); 
-		Map<Pair<TreeNode,TreeNode>, Integer>  neighbors = neighborhoods(urt, edge, neighborSize);
+		Map<Pair<TreeNode,TreeNode>, Integer>  neighbors = neighborhoods(urt, edge, neighborSize);		
+		
 		for(int j=0; j< nEdge; j++)
 		{
 			if(i!=j) {
@@ -453,29 +456,22 @@ public double[][] neighborWeight(double[][] neighborLikelihood, double power) {
 public double[][] transitionProb(UnrootedTree urt, Map<Pair<TreeNode,TreeNode>, Double> likelihoods, int neighborSize, double power) {		
 	double[][] neighborLikelihood = neighborLikelihood(urt, likelihoods, neighborSize);
 	int nEdge = neighborLikelihood.length;	
-//	for(int i=0; i<nEdge; i++) {
-//		for(int j=0; j< nEdge; j++)
-//			System.out.print(neighborLikelihood[i][j]+" ");
-//		System.out.println();
-//	}
-//	double power=0.0001;
 	double[][]  weights = neighborWeight(neighborLikelihood, power);
-//	for(int i=0; i<weights.length; i++) {
-//		for(int j=0; j<weights.length; j++)
-//			System.out.print(weights[i][j]+" ");
-//	System.out.println();
-//	}				
-	
 	
 	double transitionProb[][] = new double[nEdge][nEdge];
+	int edgeNumber = 0; 
+	edgeNumbers = new int[nEdge];
 	for(int i = 0; i< nEdge; i++)
-	{			
+	{
+		int edges = 0;
 		double sum = weights[i][i];				
 		for(int j=0; j< nEdge; j++)
 		{			
 			if(i!=j) {
 //			if(neighborLikelihood[i][j]!= Double.NEGATIVE_INFINITY) {	
 			if(weights[i][j]!= 0.0) {
+				edges += 1;  	
+				
 			double mhRatio = Math.min(Math.exp(neighborLikelihood[i][j] - neighborLikelihood[i][i])*weights[j][i]/weights[i][j], 1);
 			if(mhRatio==0.0) System.out.println("WARNING: MH is 0!!");
 			transitionProb[i][j] = weights[i][j] *mhRatio; 
@@ -483,21 +479,26 @@ public double[][] transitionProb(UnrootedTree urt, Map<Pair<TreeNode,TreeNode>, 
 			}
 		}
 		}
-			transitionProb[i][i] = sum;	
+			transitionProb[i][i] = sum;
+			edgeNumbers[i] = edges+1;
+			edgeNumber += edgeNumbers[i]; 
+			System.out.println(edges); 
 	}
-			
-//	for(int k=0;k<nEdge;k++) { 
-//		System.out.print(k+": ");
-//		double sum=0;
-//		for(int j=0;j<nEdge;j++) { 
-//			System.out.print(transitionProb[k][j]+" ");
-//			sum = sum+transitionProb[k][j];
-//		}
-//		System.out.println("add up to "+sum);		
-//	}
+	edgeNumberInNeighbor = edgeNumber/nEdge; 
 	return(transitionProb); 
 }
 
+
+public int getAverageEdgeNumberInNeighbor()
+{
+	return (edgeNumberInNeighbor); 
+}
+
+
+public int[] getEdgeNumbers()
+{
+	return(edgeNumbers); 
+}
 
 
 

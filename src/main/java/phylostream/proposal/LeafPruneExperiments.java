@@ -1,6 +1,7 @@
 package phylostream.proposal;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.tuple.Pair;
 import bayonet.distributions.Random;
@@ -37,8 +38,8 @@ public class LeafPruneExperiments extends Experiment {
 	@Arg       @DefaultValue("10")
 	public int nReplicates;
 	
-	@Arg       @DefaultValue("5")
-	public int maxNeighborhoodRadius;  
+	@Arg       @DefaultValue("1 2")
+	public List<Integer> neighborhoodRadius;  
 	
 
 	@Override
@@ -52,24 +53,36 @@ public class LeafPruneExperiments extends Experiment {
 		LeafPrune leafPrune = new LeafPrune(urt, data);		
 		Map<Pair<TreeNode,TreeNode>, Double> re = leafPrune.attachmentPointsLikelihoods(rand, nReplicates);
 		
-		
-		for(Integer k=1;k<=maxNeighborhoodRadius;k++)
+		TabularWriter edges = result.getTabularWriter("edgeNumberInNeighborhood");
+		for(Integer k=0;k<neighborhoodRadius.size();k++)
 		{
-			System.out.println(k);
-			double[] tv0 = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, k, 0.000001);
-			double[] tvHalf = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, k, 0.5);			
-			double[] tv1 = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, k, 1.0);
-			TabularWriter tvFile = result.getTabularWriter("totalVariation_"+k);
+			System.out.println(neighborhoodRadius.get(k));
+			double[] tv0 = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, neighborhoodRadius.get(k), 0.000001);			
+			double[] tvHalf = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, neighborhoodRadius.get(k), 0.5);			
+			double[] tv1 = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, neighborhoodRadius.get(k), 1.0);			
+			TabularWriter tvFile = result.getTabularWriter("totalVariation_"+neighborhoodRadius.get(k));
 			for(int i=0; i<tvHalf.length; i++)
 			{			
 				tvFile.write(
-						org.eclipse.xtext.xbase.lib.Pair.of("neighborhoodRadius", k),
+						org.eclipse.xtext.xbase.lib.Pair.of("neighborhoodRadius", neighborhoodRadius.get(k)),
 						org.eclipse.xtext.xbase.lib.Pair.of("log2n", i),
 						org.eclipse.xtext.xbase.lib.Pair.of("tv0", tv0[i]), 
 						org.eclipse.xtext.xbase.lib.Pair.of("tvHalf", tvHalf[i]),
-						org.eclipse.xtext.xbase.lib.Pair.of("tv1", tv1[i])
+						org.eclipse.xtext.xbase.lib.Pair.of("tv1", tv1[i]),
+						org.eclipse.xtext.xbase.lib.Pair.of("neighborEdgeNumbers", leafPrune.getAverageEdgeNumberInNeighbor())						
 						);
-			}			
+			}	
+			
+	
+			int [] edgeNumbers = leafPrune.getEdgeNumbers();
+			for(int i=0; i<edgeNumbers.length; i++)
+			{			
+				edges.write(
+						org.eclipse.xtext.xbase.lib.Pair.of("neighborhoodRadius", neighborhoodRadius.get(k)),						
+						org.eclipse.xtext.xbase.lib.Pair.of("edgeIndex", i),
+						org.eclipse.xtext.xbase.lib.Pair.of("neighborEdgeNumbers", edgeNumbers[i])
+						);
+			}
 
 		}
 				
