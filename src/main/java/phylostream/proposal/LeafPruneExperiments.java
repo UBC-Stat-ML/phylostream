@@ -1,9 +1,13 @@
 package phylostream.proposal;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.tuple.Pair;
+
+import org.eclipse.xtext.xbase.lib.Pair;
+
 import bayonet.distributions.Random;
 import blang.inits.Arg;
 import blang.inits.DefaultValue;
@@ -17,7 +21,6 @@ import conifer.TreeNode;
 import conifer.UnrootedTree;
 import conifer.io.PhylogeneticObservationFactory;
 import conifer.io.TreeObservations;
-//import org.eclipse.xtext.xbase.lib.Pair;
 
 
 public class LeafPruneExperiments extends Experiment {
@@ -27,19 +30,19 @@ public class LeafPruneExperiments extends Experiment {
 	public ExperimentResults result;
 		
 	@Arg       @DefaultValue("data/data27-1949.nex.run1.newick")
-	public 	String tree;
+	public 	String tree = "data/data27-1949.nex.run1.newick";
 	
 	@Arg       @DefaultValue("data/M336_27.fasta")
-	public String data;
+	public String data = "data/M336_27.fasta";
 	
 	@Arg       @DefaultValue("1")
-	public int randSeed;
+	public int randSeed = 1;
 
 	@Arg       @DefaultValue("10")
-	public int nReplicates;
+	public int nReplicates = 10;
 	
-	@Arg       @DefaultValue("1 2")
-	public List<Integer> neighborhoodRadius;  
+	@Arg       @DefaultValue({"1", "2"})
+	public List<Integer> neighborhoodRadius = Arrays.asList(1, 2);  
 	
 
 	@Override
@@ -51,13 +54,15 @@ public class LeafPruneExperiments extends Experiment {
 		Observations obs = new Observations();				
 		TreeObservations data = SequenceAlignment.loadObservedData(file, PhylogeneticObservationFactory.nucleotidesFactory(), obs);		
 		LeafPrune leafPrune = new LeafPrune(urt, data);		
-		Map<Pair<TreeNode,TreeNode>, Double> re = leafPrune.attachmentPointsLikelihoods(rand, nReplicates);
 		
+    Map<org.apache.commons.lang3.tuple.Pair<TreeNode, TreeNode>, Double> re = leafPrune.attachmentPointsLikelihoods(rand, nReplicates);
+		
+		TabularWriter allTV = result.getTabularWriter("totalVariation_all");
 		TabularWriter edges = result.getTabularWriter("edgeNumberInNeighborhood");
 		for(Integer k=0;k<neighborhoodRadius.size();k++)
 		{
-			System.out.println(neighborhoodRadius.get(k));
-			double[] tv0 = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, neighborhoodRadius.get(k), 0.000001);
+			//System.out.println(neighborhoodRadius.get(k));
+      double[] tv0 = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, neighborhoodRadius.get(k), 0.000001);
 			double acceptanceRate0 = leafPrune.getAcceptanceRate();
 			double[] tvHalf = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, neighborhoodRadius.get(k), 0.5);
 			double acceptanceRateHalf = leafPrune.getAcceptanceRate();
@@ -65,19 +70,20 @@ public class LeafPruneExperiments extends Experiment {
 			TabularWriter tvFile = result.getTabularWriter("totalVariation_"+neighborhoodRadius.get(k));
 			double acceptanceRate1 = leafPrune.getAcceptanceRate();
 			for(int i=0; i<tvHalf.length; i++)
-			{			
-				tvFile.write(
-						org.eclipse.xtext.xbase.lib.Pair.of("neighborhoodRadius", neighborhoodRadius.get(k)),
-						org.eclipse.xtext.xbase.lib.Pair.of("log2n", i),
-						org.eclipse.xtext.xbase.lib.Pair.of("tv0", tv0[i]), 
-						org.eclipse.xtext.xbase.lib.Pair.of("tvHalf", tvHalf[i]),
-						org.eclipse.xtext.xbase.lib.Pair.of("tv1", tv1[i]),
-						org.eclipse.xtext.xbase.lib.Pair.of("neighborEdgeNumbers", leafPrune.getAverageEdgeNumberInNeighbor()),
-						org.eclipse.xtext.xbase.lib.Pair.of("acceptanceRate0", acceptanceRate0),
-						org.eclipse.xtext.xbase.lib.Pair.of("acceptanceRateHalf", acceptanceRateHalf),
-						org.eclipse.xtext.xbase.lib.Pair.of("acceptanceRate1", acceptanceRate1)
-						
-						);
+			{
+			  List<Pair> toPrint = new ArrayList<>(Arrays.asList(
+			      pair("neighborhoodRadius", neighborhoodRadius.get(k)),
+            pair("log2n", i),
+            pair("tv0", tv0[i]), 
+            pair("tvHalf", tvHalf[i]),
+            pair("tv1", tv1[i]),
+            pair("neighborEdgeNumbers", leafPrune.getAverageEdgeNumberInNeighbor()),
+            pair("acceptanceRate0", acceptanceRate0),
+            pair("acceptanceRateHalf", acceptanceRateHalf),
+            pair("acceptanceRate1", acceptanceRate1)));
+				tvFile.write(toPrint.toArray(new Pair[0]));
+				toPrint.add(pair("neighborRadius", k));
+				allTV.write(toPrint.toArray(new Pair[0]));
 			}	
 			
 	
@@ -86,9 +92,9 @@ public class LeafPruneExperiments extends Experiment {
 			for(int i=0; i<edgeNumbers.length; i++)
 			{			
 				edges.write(
-						org.eclipse.xtext.xbase.lib.Pair.of("neighborhoodRadius", neighborhoodRadius.get(k)),						
-						org.eclipse.xtext.xbase.lib.Pair.of("edgeIndex", i),
-						org.eclipse.xtext.xbase.lib.Pair.of("neighborEdgeNumbers", edgeNumbers[i])
+						pair("neighborhoodRadius", neighborhoodRadius.get(k)),						
+						pair("edgeIndex", i),
+						pair("neighborEdgeNumbers", edgeNumbers[i])
 						);
 			}
 
@@ -105,12 +111,12 @@ public class LeafPruneExperiments extends Experiment {
 	    
 
 		TabularWriter csv = result.getTabularWriter("treelikelihood");
-		for(Pair<TreeNode,TreeNode> edge : re.keySet()) {			
+		for(org.apache.commons.lang3.tuple.Pair<TreeNode, TreeNode> edge : re.keySet()) {			
 			csv.write(
-					org.eclipse.xtext.xbase.lib.Pair.of("parent", edge.getLeft().toString()),
-					org.eclipse.xtext.xbase.lib.Pair.of("node", edge.getRight().toString()),
-					org.eclipse.xtext.xbase.lib.Pair.of("branch.length", treeAfterPruning.getBranchLength(edge.getLeft(), edge.getRight())), 
-                    org.eclipse.xtext.xbase.lib.Pair.of("likelihood", re.get(edge).toString())
+					pair("parent", edge.getLeft().toString()),
+					pair("node", edge.getRight().toString()),
+					pair("branch.length", treeAfterPruning.getBranchLength(edge.getLeft(), edge.getRight())), 
+          pair("likelihood", re.get(edge).toString())
 					);			
 		}
 		
@@ -119,8 +125,13 @@ public class LeafPruneExperiments extends Experiment {
 
 	public static void main(String[] args)
 	{
+	  //new LeafPruneExperiments().run();
 		Experiment.start(args);
 	}
 
+	 private static <K,V> org.eclipse.xtext.xbase.lib.Pair<K,V> pair(K key ,V value) 
+	  {
+	    return org.eclipse.xtext.xbase.lib.Pair.of(key, value);
+	  }
 }
 
