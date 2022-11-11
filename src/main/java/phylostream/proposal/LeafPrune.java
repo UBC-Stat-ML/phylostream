@@ -49,6 +49,7 @@ public class LeafPrune
 	private UnrootedTree urtAfterOneLeafRemoval = null;   // tree after pruning a leaf
 	private int[]  edgeNumbers; 
 	private int edgeNumberInNeighbor; 
+	private double acceptanceRate=0; 
 
 	public LeafPrune(UnrootedTree urt, TreeObservations data) {
 		this.urtree = urt;
@@ -287,7 +288,8 @@ public double[] totalVariationSequence(double[] likelihoodsVec, int n) {
 	if(stationaryDist(likelihoodsVec)) {	  //	likelihoodsVec expNormalized  
 	double[][] A= transitionProb(likelihoodsVec);  	
 	for(int i=0;i<n;i++) 	
-	result[i]=totalVariation(likelihoodsVec,multiplyTransitionProbMat(A, (i+1)));
+		result[i]=totalVariation(likelihoodsVec,A);
+		A = multiply(A, A);
 	}
 	return(result);
 }
@@ -461,6 +463,8 @@ public double[][] transitionProb(UnrootedTree urt, Map<Pair<TreeNode,TreeNode>, 
 	double transitionProb[][] = new double[nEdge][nEdge];
 	int edgeNumber = 0; 
 	edgeNumbers = new int[nEdge];
+	
+	acceptanceRate = 0; 
 	for(int i = 0; i< nEdge; i++)
 	{
 		int edges = 0;
@@ -473,8 +477,10 @@ public double[][] transitionProb(UnrootedTree urt, Map<Pair<TreeNode,TreeNode>, 
 				edges += 1;  	
 				
 			double mhRatio = Math.min(Math.exp(neighborLikelihood[i][j] - neighborLikelihood[i][i])*weights[j][i]/weights[i][j], 1);
+			
 			if(mhRatio==0.0) System.out.println("WARNING: MH is 0!!");
-			transitionProb[i][j] = weights[i][j] *mhRatio; 
+			transitionProb[i][j] = weights[i][j] *mhRatio;
+			acceptanceRate += transitionProb[i][j]; 
 			sum +=  weights[i][j]*(1-mhRatio);  
 			}
 		}
@@ -484,7 +490,8 @@ public double[][] transitionProb(UnrootedTree urt, Map<Pair<TreeNode,TreeNode>, 
 			edgeNumber += edgeNumbers[i]; 
 			System.out.println(edges); 
 	}
-	edgeNumberInNeighbor = edgeNumber/nEdge; 
+	edgeNumberInNeighbor = edgeNumber/nEdge;
+	acceptanceRate /= nEdge;   //Uniformly pick one edge. 
 	return(transitionProb); 
 }
 
@@ -498,6 +505,11 @@ public int getAverageEdgeNumberInNeighbor()
 public int[] getEdgeNumbers()
 {
 	return(edgeNumbers); 
+}
+
+public double getAcceptanceRate()
+{
+	return(acceptanceRate);	
 }
 
 

@@ -57,10 +57,13 @@ public class LeafPruneExperiments extends Experiment {
 		for(Integer k=0;k<neighborhoodRadius.size();k++)
 		{
 			System.out.println(neighborhoodRadius.get(k));
-			double[] tv0 = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, neighborhoodRadius.get(k), 0.000001);			
-			double[] tvHalf = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, neighborhoodRadius.get(k), 0.5);			
+			double[] tv0 = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, neighborhoodRadius.get(k), 0.000001);
+			double acceptanceRate0 = leafPrune.getAcceptanceRate();
+			double[] tvHalf = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, neighborhoodRadius.get(k), 0.5);
+			double acceptanceRateHalf = leafPrune.getAcceptanceRate();
 			double[] tv1 = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, neighborhoodRadius.get(k), 1.0);			
 			TabularWriter tvFile = result.getTabularWriter("totalVariation_"+neighborhoodRadius.get(k));
+			double acceptanceRate1 = leafPrune.getAcceptanceRate();
 			for(int i=0; i<tvHalf.length; i++)
 			{			
 				tvFile.write(
@@ -69,12 +72,17 @@ public class LeafPruneExperiments extends Experiment {
 						org.eclipse.xtext.xbase.lib.Pair.of("tv0", tv0[i]), 
 						org.eclipse.xtext.xbase.lib.Pair.of("tvHalf", tvHalf[i]),
 						org.eclipse.xtext.xbase.lib.Pair.of("tv1", tv1[i]),
-						org.eclipse.xtext.xbase.lib.Pair.of("neighborEdgeNumbers", leafPrune.getAverageEdgeNumberInNeighbor())						
+						org.eclipse.xtext.xbase.lib.Pair.of("neighborEdgeNumbers", leafPrune.getAverageEdgeNumberInNeighbor()),
+						org.eclipse.xtext.xbase.lib.Pair.of("acceptanceRate0", acceptanceRate0),
+						org.eclipse.xtext.xbase.lib.Pair.of("acceptanceRateHalf", acceptanceRateHalf),
+						org.eclipse.xtext.xbase.lib.Pair.of("acceptanceRate1", acceptanceRate1)
+						
 						);
 			}	
 			
 	
 			int [] edgeNumbers = leafPrune.getEdgeNumbers();
+
 			for(int i=0; i<edgeNumbers.length; i++)
 			{			
 				edges.write(
