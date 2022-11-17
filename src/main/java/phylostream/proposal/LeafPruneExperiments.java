@@ -62,11 +62,11 @@ public class LeafPruneExperiments extends Experiment {
 		for(Integer k=0;k<neighborhoodRadius.size();k++)
 		{
 			//System.out.println(neighborhoodRadius.get(k));
-      double[] tv0 = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, neighborhoodRadius.get(k), 0.000001);
+      double[] tv0 = leafPrune.totalVariationSequenceNearestNeighbor(re, 20, neighborhoodRadius.get(k), 0.000001, 0.01);
 			double acceptanceRate0 = leafPrune.getAcceptanceRate();
-			double[] tvHalf = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, neighborhoodRadius.get(k), 0.5);
+			double[] tvHalf = leafPrune.totalVariationSequenceNearestNeighbor(re, 20, neighborhoodRadius.get(k), 0.5, 0.01);
 			double acceptanceRateHalf = leafPrune.getAcceptanceRate();
-			double[] tv1 = leafPrune.totalVariationSequenceNearestNeighbor(re, 10, neighborhoodRadius.get(k), 1.0);			
+			double[] tv1 = leafPrune.totalVariationSequenceNearestNeighbor(re, 20, neighborhoodRadius.get(k), 1.0, 0.01);			
 			TabularWriter tvFile = result.getTabularWriter("totalVariation_"+neighborhoodRadius.get(k));
 			double acceptanceRate1 = leafPrune.getAcceptanceRate();
 			for(int i=0; i<tvHalf.length; i++)
