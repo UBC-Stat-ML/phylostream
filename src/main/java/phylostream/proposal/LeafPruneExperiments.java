@@ -40,11 +40,16 @@ public class LeafPruneExperiments extends Experiment {
 
 	@Arg       @DefaultValue("10")
 	public int nReplicates = 10;
+
+	@Arg       @DefaultValue("10")
+	public int K = 10;
+
 	
 	@Arg       @DefaultValue({"1", "2"})
 	public List<Integer> neighborhoodRadius = Arrays.asList(1, 2);  
 	
-
+	
+	
 	@Override
 	public void run() {
 		
@@ -55,44 +60,51 @@ public class LeafPruneExperiments extends Experiment {
 		TreeObservations data = SequenceAlignment.loadObservedData(file, PhylogeneticObservationFactory.nucleotidesFactory(), obs);		
 		LeafPrune leafPrune = new LeafPrune(urt, data);		
 		
-    Map<org.apache.commons.lang3.tuple.Pair<TreeNode, TreeNode>, Double> re = leafPrune.attachmentPointsLikelihoods(rand, nReplicates);
+        Map<org.apache.commons.lang3.tuple.Pair<TreeNode, TreeNode>, Double> re = leafPrune.attachmentPointsLikelihoods(rand, nReplicates);
 		
-		TabularWriter allTV = result.getTabularWriter("totalVariation_all");
+		TabularWriter allTV = result.getTabularWriter("totalVariationDistance");
 		TabularWriter edges = result.getTabularWriter("edgeNumberInNeighborhood");
+		TabularWriter acc = result.getTabularWriter("acceptanceRate");
+		
+		
+		double mixtureProportion = 1.0/urt.leaves().size(); 
+		
+		
+		double[] powerList = new double[] {0, 0.5, 1};
+		
+		
+		
 		for(Integer k=0;k<neighborhoodRadius.size();k++)
-		{
-			//System.out.println(neighborhoodRadius.get(k));
-      double[] tv0 = leafPrune.totalVariationSequenceNearestNeighbor(re, 20, neighborhoodRadius.get(k), 0.000001, 0.01);
-			double acceptanceRate0 = leafPrune.getAcceptanceRate();
-			double[] tvHalf = leafPrune.totalVariationSequenceNearestNeighbor(re, 20, neighborhoodRadius.get(k), 0.5, 0.01);
-			double acceptanceRateHalf = leafPrune.getAcceptanceRate();
-			double[] tv1 = leafPrune.totalVariationSequenceNearestNeighbor(re, 20, neighborhoodRadius.get(k), 1.0, 0.01);			
-			TabularWriter tvFile = result.getTabularWriter("totalVariation_"+neighborhoodRadius.get(k));
-			double acceptanceRate1 = leafPrune.getAcceptanceRate();
-			for(int i=0; i<tvHalf.length; i++)
+		{		
+			for(int l=0;l<powerList.length;l++)
 			{
-			  List<Pair> toPrint = new ArrayList<>(Arrays.asList(
-			      pair("neighborhoodRadius", neighborhoodRadius.get(k)),
-            pair("log2n", i),
-            pair("tv0", tv0[i]), 
-            pair("tvHalf", tvHalf[i]),
-            pair("tv1", tv1[i]),
-            pair("neighborEdgeNumbers", leafPrune.getAverageEdgeNumberInNeighbor()),
-            pair("acceptanceRate0", acceptanceRate0),
-            pair("acceptanceRateHalf", acceptanceRateHalf),
-            pair("acceptanceRate1", acceptanceRate1)));
-				tvFile.write(toPrint.toArray(new Pair[0]));
-				toPrint.add(pair("neighborRadius", k));
-				allTV.write(toPrint.toArray(new Pair[0]));
-			}	
-			
+				double[] tv = leafPrune.totalVariationSequenceNearestNeighbor(re, K, neighborhoodRadius.get(k), powerList[l], mixtureProportion);
+				double acceptanceRate = leafPrune.getAcceptanceRate();
+				
+				acc.write(
+						pair("neighborRadius", neighborhoodRadius.get(k)),
+						pair("Proposal", powerList[l]),						
+						pair("acceptanceRate", acceptanceRate));
+				
+				for(int i=0; i<tv.length; i++)
+				{
+					List<Pair> toPrint = new ArrayList<>(Arrays.asList(
+							pair("neighborRadius", neighborhoodRadius.get(k)),
+							pair("Proposal", powerList[l]),
+							pair("log2n", i),							
+							pair("tv", tv[i])
+							));
+//					toPrint.add(pair("neighborRadius", k));
+					allTV.write(toPrint.toArray(new Pair[0]));
+				}	
+			}
 	
 			int [] edgeNumbers = leafPrune.getEdgeNumbers();
 
 			for(int i=0; i<edgeNumbers.length; i++)
 			{			
 				edges.write(
-						pair("neighborhoodRadius", neighborhoodRadius.get(k)),						
+						pair("neighborRadius", neighborhoodRadius.get(k)),						
 						pair("edgeIndex", i),
 						pair("neighborEdgeNumbers", edgeNumbers[i])
 						);

@@ -343,7 +343,7 @@ public double[][] neighborDistance(UnrootedTree urt, Map<Pair<TreeNode,TreeNode>
 	Set<Pair<TreeNode,TreeNode>> edgeSet = likelihoods.keySet();
 	Indexer<Pair<TreeNode,TreeNode>> index = new Indexer<Pair<TreeNode,TreeNode>>(edgeSet);		
 	int nEdge=index.size();	
-	System.out.println("Edge number is "+ nEdge);
+//	System.out.println("Edge number is "+ nEdge);
 	double distance[][] = new double[nEdge][nEdge];
 	for(int i = 0; i< nEdge; i++)
 		for(int j=0; j<nEdge; j++)
@@ -431,7 +431,8 @@ public double[][] neighborWeight(double[][] neighborLikelihood, double power) {
 	{
 		double max = Double.NEGATIVE_INFINITY;
 		for(int j=0; j<sz; j++)
-			max = Math.max(max, power*neighborLikelihood[i][j]);
+			if(neighborLikelihood[i][j]!= Double.NEGATIVE_INFINITY)
+				max = Math.max(max, power*neighborLikelihood[i][j]);
 	    double sum = 0;
 	    for(int j=0; j<sz; j++) 
 	    {
@@ -523,14 +524,14 @@ public double[][] transitionProbMixtureMove(UnrootedTree urt, Map<Pair<TreeNode,
 			System.out.println(edges); 
 	}
 	
-	for(int i=0;i<nEdge;i++) { 
-	double sum=0;
-	for(int j=0;j<nEdge;j++) { 
-		System.out.print(transitionProb[i][j]+" ");
-		sum = sum+transitionProb[i][j];
-	}
-	System.out.println("add up to "+sum);		
-}
+//	for(int i=0;i<nEdge;i++) { 
+//	double sum=0;
+//	for(int j=0;j<nEdge;j++) { 
+//		System.out.print(transitionProb[i][j]+" ");
+//		sum = sum+transitionProb[i][j];
+//	}
+//	System.out.println("add up to "+sum);		
+//}
 	edgeNumberInNeighbor = edgeNumber/nEdge;
 	acceptanceRate /= nEdge;   //Uniformly pick one edge. 
 	return(transitionProb); 
