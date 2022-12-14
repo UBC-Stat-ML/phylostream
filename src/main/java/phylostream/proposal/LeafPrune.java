@@ -49,13 +49,16 @@ public class LeafPrune
 	private UnrootedTree urtAfterOneLeafRemoval = null;   // tree after pruning a leaf
 	private int[]  edgeNumbers; 
 	private int edgeNumberInNeighbor; 
-	private double acceptanceRate=0; 
+	private double acceptanceRate=0;
+	
+	public double branchRate = 100;
 
-	public LeafPrune(UnrootedTree urt, TreeObservations data) {
+	
+	public LeafPrune(UnrootedTree urt, TreeObservations data, String rateMatrix) {
 		this.urtree = urt;
 		this.data = data;	  
 		TreeNode arbitraryRoot = Synthetic.arbitraryRoot(urt);
-		String rateMatrix = "/phylostream/COVID_GTR.txt";	    
+//		String rateMatrix = "/phylostream/COVID_GTR.txt";	    
 		double [][] loadedRateMatrix = SimpleRateMatrix.fromResource(rateMatrix).getRateMatrix();	    
 		CTMCParameters ctmc = new SimpleRateMatrix(loadedRateMatrix, null);	    
 		double invariantSiteProbability = 0.01;	    	    
@@ -143,8 +146,8 @@ public boolean  expNormalizeLikelihoods(Map<Pair<TreeNode,TreeNode>, Double> lik
 //		System.out.println(prunedSubtree);		
 		urtAfterOneLeafRemoval = urt;  
 		List<List<UnaryFactor<TreeNode>>> prunedSubtreeMarginals = Lists.newArrayList();
-		double  rate = 10; 
-		RealDistribution brDist = Exponential.distribution(new RealConstant(rate));
+//		double branchRate = 10; 
+		RealDistribution brDist = Exponential.distribution(new RealConstant(branchRate));
 		double br[] = new double[N]; 
 		for (int i=0;i<N;i++)
 		{

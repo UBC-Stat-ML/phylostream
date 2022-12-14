@@ -33,7 +33,9 @@ public class TestLeafPrune {
 								
 		System.out.print(data);		
 				
-		LeafPrune leafPrune = new LeafPrune(urt, data);		
+		String rateMatrix = "/phylostream/COVID_GTR.txt";
+		
+		LeafPrune leafPrune = new LeafPrune(urt, data, rateMatrix);		
 		
 		Map<Pair<TreeNode,TreeNode>, Double> result = leafPrune.attachmentPointsLikelihoods(rand, 10);
 		
@@ -63,8 +65,8 @@ public class TestLeafPrune {
 		Observations obs = new Observations();
 		TreeObservations data = SequenceAlignment.loadObservedData(file, PhylogeneticObservationFactory.nucleotidesFactory(), obs);
 								
-		
-		LeafPrune leafPrune = new LeafPrune(urt, data);		
+		String rateMatrix = "/phylostream/COVID_GTR.txt";
+		LeafPrune leafPrune = new LeafPrune(urt, data, rateMatrix);		
 		int nReplicates =5;
 		Map<Pair<TreeNode,TreeNode>, Double> re = leafPrune.attachmentPointsLikelihoods(rand, nReplicates);		
 
@@ -89,7 +91,8 @@ public class TestLeafPrune {
 		File file = new File("data/M336_27.fasta");
 		Observations obs = new Observations();
 		TreeObservations data = SequenceAlignment.loadObservedData(file, PhylogeneticObservationFactory.nucleotidesFactory(), obs);
-		LeafPrune leafPrune = new LeafPrune(urt, data);		
+		String rateMatrix = "/phylostream/COVID_GTR.txt";
+		LeafPrune leafPrune = new LeafPrune(urt, data, rateMatrix);		
 		int nReplicates =5;
 		Map<Pair<TreeNode,TreeNode>, Double> re = leafPrune.attachmentPointsLikelihoods(rand, nReplicates);		
 //		double[][] distance = leafPrune.neighborDistance(urt, re, 5);
