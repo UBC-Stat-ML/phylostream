@@ -211,7 +211,24 @@ public double[][] multiply(double[][] A, double[][] B) {
 		return C;
 	}	
 	
-	
+
+////
+//public double[][] multiply(double[][] A, double[][] B) {
+//	double[][] C = new double[A.length][B[0].length];	
+//	for(int i=0; i<C.length; i++){
+//		for(int j=0; j<C[0].length; j++)
+//		{
+//		double sum=0; 		
+//		for(int k=0; k<A[0].length; k++)
+//			sum+= A[i][k]*B[k][j];
+//		C[i][j] = sum;
+//		}
+//	}
+//	return C;
+//}	
+
+
+
 //public double[][] multiplyTransitionProbMat(double[][] A, int n){
 //	if(n==1) return A; 
 //	double[][] result = A; 

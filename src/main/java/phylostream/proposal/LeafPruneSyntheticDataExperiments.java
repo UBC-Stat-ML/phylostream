@@ -24,9 +24,13 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 	 
     @GlobalArg
 	public ExperimentResults result;
-		
+    
 	@Arg       @DefaultValue("1")
-	public int randSeed = 1;
+	public int treeRandSeed = 1;
+
+		
+	@Arg       @DefaultValue("2")
+	public int randSeed = 2;
 
 	@Arg       @DefaultValue("10")
 	public int nReplicates = 10;
@@ -41,16 +45,29 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 	public List<Integer> neighborhoodRadius = Arrays.asList(1, 2);  
 	
 	
+	@Arg       @DefaultValue("50")
+	public int nLeaves = 50;
+	
+
+	@Arg       @DefaultValue("1000")
+	public int nSites = 1000;
+	
+	@Arg       @DefaultValue("0.001")
+	public double branchMeanLength = 0.001;  
+	
+	@Arg       @DefaultValue("0.5")	
+	public double mixtureProportion =  0.5;
+	
 	
 	@Override
 	public void run() {
 		Synthetic generator = new Synthetic();
-		generator.rand =  new Random(randSeed);
-	    generator.nLeaves = 50;
+		generator.rand =  new Random(treeRandSeed);
+	    generator.nLeaves = nLeaves;
 	    generator.nSites = 1000;	    
-	    generator.branchMeanLength = 0.005;
+	    generator.branchMeanLength = branchMeanLength;
 	    generator.errorProbability = 0;
-	    generator.rateMatrix = "/phylostream/COVID_GTR.txt"; // rateMatrix; 
+	    generator.rateMatrix = rateMatrix;   
 
 	    Realization realization = generator.next();         
 	    UnrootedTree urt = realization.trueTree;
@@ -86,7 +103,7 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 		
 //		double mixtureProportion =  1.0/urt.leaves().size();
 		
-		double mixtureProportion =  0;
+//		double mixtureProportion =  0;
 		
 		double[] powerList = new double[] {0, 0.5, 1};
 		
