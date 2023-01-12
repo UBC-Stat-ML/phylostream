@@ -118,6 +118,10 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 			for(int l=0;l<powerList.length;l++)
 			{
 				double[] tv;
+				
+				if(globalMixture && powerList[l]==0)
+					tv = leafPrune.totalVariationGlobal(re, K, neighborhoodRadius.get(k), powerList[l], 1);
+				
 				if(globalMixture && powerList[l]>0)
 					tv = leafPrune.totalVariationGlobal(re, K, neighborhoodRadius.get(k), powerList[l], mixtureProportion);
 				else
