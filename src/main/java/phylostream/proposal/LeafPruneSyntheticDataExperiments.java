@@ -58,6 +58,10 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 	@Arg       @DefaultValue("0.5")	
 	public double mixtureProportion =  0.5;
 	
+	@Arg       @DefaultValue("false")	
+	public boolean globalMixture =  false;
+	
+	
 	
 	@Override
 	public void run() {
@@ -113,7 +117,11 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 		{		
 			for(int l=0;l<powerList.length;l++)
 			{
-				double[] tv = leafPrune.totalVariationSequenceNearestNeighbor(re, K, neighborhoodRadius.get(k), powerList[l], mixtureProportion);
+				double[] tv;
+				if(globalMixture && powerList[l]>0)
+					tv = leafPrune.totalVariationGlobal(re, K, neighborhoodRadius.get(k), powerList[l], mixtureProportion);
+				else
+					tv = leafPrune.totalVariationSequenceNearestNeighbor(re, K, neighborhoodRadius.get(k), powerList[l], mixtureProportion);
 				double acceptanceRate = leafPrune.getAcceptanceRate();
 				
 				acc.write(

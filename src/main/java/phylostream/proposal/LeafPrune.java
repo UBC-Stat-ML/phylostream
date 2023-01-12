@@ -334,8 +334,22 @@ public double[] totalVariationSequenceNearestNeighbor(Map<Pair<TreeNode,TreeNode
 //	int K = log2(n);
 	double[] result = new double[K];
 	double[] likelihoodsVec=loglikelihoodsVec(likelihoods);
-	if(stationaryDist(likelihoodsVec)) {		   //	likelihoodsVec expNormalized
+	if(stationaryDist(likelihoodsVec)) {		   //	likelihoodsVec expNormalized		
 	double[][] A= transitionProbMixtureMove(urtAfterOneLeafRemoval, likelihoods, neighborSize, power, mixtureProportion);  // Note likelihoods are in log scale   
+	for(int i=0;i<K;i++) 	
+	result[i]=totalVariation(likelihoodsVec,multiplyTransitionProbMat(A, (i+1)));
+	}
+	return(result);
+}
+
+
+
+public double[] totalVariationGlobal(Map<Pair<TreeNode,TreeNode>, Double> likelihoods, int K, int neighborSize, double power, double mixtureProportion) {
+//	int K = log2(n);
+	double[] result = new double[K];
+	double[] likelihoodsVec=loglikelihoodsVec(likelihoods);
+	if(stationaryDist(likelihoodsVec)) {		   //	likelihoodsVec expNormalized		
+	double[][] A = transitionProbGlobalMixtureMove(urtAfterOneLeafRemoval, likelihoods, neighborSize, power, mixtureProportion);  // Note likelihoods are in log scale   
 	for(int i=0;i<K;i++) 	
 	result[i]=totalVariation(likelihoodsVec,multiplyTransitionProbMat(A, (i+1)));
 	}
@@ -395,43 +409,53 @@ public double[][] neighborDistance(UnrootedTree urt, Map<Pair<TreeNode,TreeNode>
 
 
 
+//likelihoods are in log scale
+public double[][] neighborLikelihood(UnrootedTree urt, Map<Pair<TreeNode,TreeNode>, Double> likelihoods, int neighborSize) {
+	
+	Pair<double[][],double[]> re = likelihood(urt, likelihoods, neighborSize);
+	return(re.getLeft());
+}
+
+
 // likelihoods are in log scale
-public double[][] neighborLikelihood(UnrootedTree urt, Map<Pair<TreeNode,TreeNode>, Double> likelihoods, int neighborSize) {	
+public Pair<double[][],double[]> likelihood(UnrootedTree urt, Map<Pair<TreeNode,TreeNode>, Double> likelihoods, int neighborSize) {	
 	Set<Pair<TreeNode,TreeNode>> edgeSet = likelihoods.keySet();
 	Indexer<Pair<TreeNode,TreeNode>> index = new Indexer<Pair<TreeNode,TreeNode>>(edgeSet);		
-	int nEdge=index.size();	
+	int nEdge = index.size();	
 	System.out.println("Edge number is "+ nEdge);
 	double neighborLikelihood[][] = new double[nEdge][nEdge];
+	double likelihoodVec[] = new double[nEdge];
 		
 	for(int i = 0; i< nEdge; i++)
 	{		
 		Pair<TreeNode, TreeNode> edge =  index.i2o(i); 
-		Map<Pair<TreeNode,TreeNode>, Integer>  neighbors = neighborhoods(urt, edge, neighborSize);		
-		
+		Map<Pair<TreeNode,TreeNode>, Integer>  neighbors = neighborhoods(urt, edge, neighborSize);	
+		likelihoodVec[i] =  likelihoods.get(edge);
+
 		for(int j=0; j< nEdge; j++)
 		{
 			if(i!=j) {
-			List<Pair<TreeNode, TreeNode>> unorderedEdge = Lists.newArrayList();
-			Pair<TreeNode, TreeNode> edge2 = index.i2o(j); 
-			unorderedEdge.add(edge2);
-			unorderedEdge.add(Pair.of(edge2.getRight(), edge2.getLeft()));
-			if(!Collections.disjoint(unorderedEdge, neighbors.keySet())) { 	// edge2 is in the neighbor of edge				
-				if(likelihoods.keySet().contains(edge2))
-					neighborLikelihood[i][j] =  likelihoods.get(edge2); 
-				else {
-					neighborLikelihood[i][j] = likelihoods.get(unorderedEdge.get(1));
+				List<Pair<TreeNode, TreeNode>> unorderedEdge = Lists.newArrayList();
+				Pair<TreeNode, TreeNode> edge2 = index.i2o(j); 
+				unorderedEdge.add(edge2);
+				unorderedEdge.add(Pair.of(edge2.getRight(), edge2.getLeft()));
+				if(!Collections.disjoint(unorderedEdge, neighbors.keySet())) { 	// edge2 is in the neighbor of edge				
+					if(likelihoods.keySet().contains(edge2))
+						neighborLikelihood[i][j] =  likelihoods.get(edge2); 
+					else {
+						neighborLikelihood[i][j] = likelihoods.get(unorderedEdge.get(1));
+					}
+				}
+				else
+				{
+					neighborLikelihood[i][j] = Double.NEGATIVE_INFINITY; 
 				}
 			}
-		else
-		{
-			neighborLikelihood[i][j] = Double.NEGATIVE_INFINITY; 
-		}
-	}
 			else
 				neighborLikelihood[i][j] = likelihoods.get(edge);
 		}
 	}
-	return(neighborLikelihood); 
+	return(Pair.of(neighborLikelihood, likelihoodVec)); 
 }
 
 
@@ -497,6 +521,64 @@ public double[][] transitionProb(double[] likelihoodsVec) {
 //	}
 	return(transitionProb); 
 }
+
+
+
+
+//likelihoods are in log scale
+public double[][] transitionProbGlobalMixtureMove(UnrootedTree urt, Map<Pair<TreeNode,TreeNode>, Double> likelihoods, int neighborSize, double power, double globalMixtureProportion) {				
+		
+	Pair<double[][],double[]> re = likelihood(urt, likelihoods, neighborSize);
+	double[][] neighborLikelihood = re.getLeft();
+	double[] likelihoodVec = re.getRight();
+	int nEdge = neighborLikelihood.length;	
+	double[][]  weights = neighborWeight(neighborLikelihood, power);
+	
+	double transitionProb[][] = new double[nEdge][nEdge];
+	int edgeNumber = 0; 
+	edgeNumbers = new int[nEdge];
+	
+	acceptanceRate = 0; 
+	for(int i = 0; i< nEdge; i++)
+	{
+		int edges = 0;
+		double sum = globalMixtureProportion*1.0/nEdge+ (1-globalMixtureProportion)*weights[i][i];				
+		for(int j=0; j< nEdge; j++)
+		{			
+			if(i!=j) {
+				double likelihoodRatio = Math.exp(likelihoodVec[j] - likelihoodVec[i]); 
+				double mhRatioUniform = Math.min(likelihoodRatio, 1);   //global uniform
+				double mhRatioLocalInformative = Math.min(likelihoodRatio*weights[j][i]/weights[i][j], 1);
+				transitionProb[i][j] = globalMixtureProportion*(1.0/nEdge)*mhRatioUniform;
+				sum += globalMixtureProportion*(1.0/nEdge)*(1-mhRatioUniform); 
+ 
+			if(weights[i][j]!= Double.NEGATIVE_INFINITY) {
+				edges += 1;  								 			
+			transitionProb[i][j] = transitionProb[i][j] + (1-globalMixtureProportion)*weights[i][j] *mhRatioLocalInformative;
+			acceptanceRate += transitionProb[i][j]; 
+			sum +=  (1-globalMixtureProportion)*weights[i][j]*(1-mhRatioLocalInformative);  
+			}			
+		}
+		}
+			transitionProb[i][i] = sum;
+			edgeNumbers[i] = edges+1;
+			edgeNumber += edgeNumbers[i]; 
+			System.out.println(edges); 
+	}
+	
+//	for(int i=0;i<nEdge;i++) { 
+//	double sum=0;
+//	for(int j=0;j<nEdge;j++) { 
+//		System.out.print(transitionProb[i][j]+" ");
+//		sum = sum+transitionProb[i][j];
+//	}
+//	System.out.println("add up to "+sum);		
+//}
+	edgeNumberInNeighbor = edgeNumber/nEdge;
+	acceptanceRate /= nEdge;   //Uniformly pick one edge. 
+	return(transitionProb); 
+}
+
 
 
 
