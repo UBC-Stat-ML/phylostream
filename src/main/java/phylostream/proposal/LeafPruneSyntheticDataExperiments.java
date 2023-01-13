@@ -99,7 +99,8 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 		
 		TabularWriter allTV = result.getTabularWriter("totalVariationDistance");
 		TabularWriter edges = result.getTabularWriter("edgeNumberInNeighborhood");
-		TabularWriter acc = result.getTabularWriter("acceptanceRate");
+		TabularWriter acc   = result.getTabularWriter("acceptanceRate");
+		TabularWriter method = result.getTabularWriter("proposalMethod");
 				
 		double[] powerList = new double[] {0, 0.5, 1};
 		
@@ -123,13 +124,21 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 						pair("Proposal", powerList[l]),						
 						pair("acceptanceRate", acceptanceRate));
 				
+				String methodName =  "Global " + globalMixture + " Proposal " + powerList[l];
+				method.write(
+						pair("Method", methodName),
+						pair("GlobalMixture", globalMixture),
+						pair("mixtureProportion", mixtureProportion),									
+						pair("Proposal", powerList[l])						
+						);
+				
+				
 				for(int i=0; i<tv.length; i++)
 				{
 					List<Pair> toPrint = new ArrayList<>(Arrays.asList(
-							pair("neighborRadius", neighborhoodRadius.get(k)),
-							pair("GlobalMixture", globalMixture),
-							pair("mixtureProportion", mixtureProportion),									
-							pair("Proposal", powerList[l]),
+							pair("neighborRadius", neighborhoodRadius.get(k)),							
+							pair("mixtureProportion", mixtureProportion),							
+							pair("Proposal", methodName),
 							pair("log2n", i),							
 							pair("tv", tv[i])
 							));
