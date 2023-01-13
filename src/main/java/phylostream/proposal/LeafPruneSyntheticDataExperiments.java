@@ -62,7 +62,6 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 	public boolean globalMixture =  false;
 	
 	
-	
 	@Override
 	public void run() {
 		Synthetic generator = new Synthetic();
@@ -101,23 +100,14 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 		TabularWriter allTV = result.getTabularWriter("totalVariationDistance");
 		TabularWriter edges = result.getTabularWriter("edgeNumberInNeighborhood");
 		TabularWriter acc = result.getTabularWriter("acceptanceRate");
-		
-		
-//		double mixtureProportion = 0.5; // 1.0/urt.leaves().size(); 
-		
-//		double mixtureProportion =  1.0/urt.leaves().size();
-		
-//		double mixtureProportion =  0;
-		
+				
 		double[] powerList = new double[] {0, 0.5, 1};
-		
-		
 		
 		for(Integer k=0;k<neighborhoodRadius.size();k++)
 		{		
 			for(int l=0;l<powerList.length;l++)
 			{
-				double[] tv;
+				double[] tv = null;
 				
 				if(globalMixture && powerList[l]==0)
 					tv = leafPrune.totalVariationGlobal(re, K, neighborhoodRadius.get(k), powerList[l], 1);
@@ -137,11 +127,12 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 				{
 					List<Pair> toPrint = new ArrayList<>(Arrays.asList(
 							pair("neighborRadius", neighborhoodRadius.get(k)),
+							pair("GlobalMixture", globalMixture),
+							pair("mixtureProportion", mixtureProportion),									
 							pair("Proposal", powerList[l]),
 							pair("log2n", i),							
 							pair("tv", tv[i])
 							));
-//					toPrint.add(pair("neighborRadius", k));
 					allTV.write(toPrint.toArray(new Pair[0]));
 				}	
 			}
@@ -178,8 +169,6 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
           pair("likelihood", re.get(edge).toString())
 					);			
 		}
-		
-
 	
 	}
 	

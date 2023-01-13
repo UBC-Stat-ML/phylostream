@@ -422,7 +422,7 @@ public Pair<double[][],double[]> likelihood(UnrootedTree urt, Map<Pair<TreeNode,
 	Set<Pair<TreeNode,TreeNode>> edgeSet = likelihoods.keySet();
 	Indexer<Pair<TreeNode,TreeNode>> index = new Indexer<Pair<TreeNode,TreeNode>>(edgeSet);		
 	int nEdge = index.size();	
-	System.out.println("Edge number is "+ nEdge);
+//	System.out.println("Edge number is "+ nEdge);
 	double neighborLikelihood[][] = new double[nEdge][nEdge];
 	double likelihoodVec[] = new double[nEdge];
 		
@@ -644,6 +644,7 @@ public double[][] transitionProbMixtureMove(UnrootedTree urt, Map<Pair<TreeNode,
 
 //likelihoods are in log scale
 public double[][] transitionProb(UnrootedTree urt, Map<Pair<TreeNode,TreeNode>, Double> likelihoods, int neighborSize, double power) {		
+	
 	double[][] neighborLikelihood = neighborLikelihood(urt, likelihoods, neighborSize);
 	int nEdge = neighborLikelihood.length;	
 	double[][]  weights = neighborWeight(neighborLikelihood, power);
@@ -682,7 +683,6 @@ public double[][] transitionProb(UnrootedTree urt, Map<Pair<TreeNode,TreeNode>, 
 	acceptanceRate /= nEdge;   //Uniformly pick one edge. 
 	return(transitionProb); 
 }
-
 
 
 
