@@ -146,7 +146,7 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 						pair("acceptanceRate", acceptanceRate));
 				
 				
-				String methodName =  (globalMixture? "Global":"Local") + " Proposal " + powerList[l] + (powerList[l]==0?"":mixtureProportion);
+				String methodName =  (globalMixture? "Global":"Local") + "; Proposal " + powerList[l] +"; "+ (powerList[l]==0?"":mixtureProportion);
 				method.write(
 						pair("Method", methodName),
 						pair("MixtureType", (globalMixture? "Global":"Local")),
