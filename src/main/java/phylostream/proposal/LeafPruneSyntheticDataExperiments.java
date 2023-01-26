@@ -119,7 +119,7 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 				pair("treeRadius", treeRadius)
 				);
 				
-		double[] powerList = new double[] {0};
+		double[] powerList = new double[] {0, 0.5, 1};
 		
 		for(Integer k=0;k<neighborhoodRadius.size();k++)
 		{		
