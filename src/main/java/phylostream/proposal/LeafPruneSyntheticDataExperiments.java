@@ -159,7 +159,9 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 					List<Pair> toPrint = new ArrayList<>(Arrays.asList(
 							pair("neighborRadius", neighborhoodRadius.get(k)),							
 							pair("mixtureProportion", (powerList[l]==0?"":mixtureProportion)),							
-							pair("Proposal", methodName),
+							pair("ProposalType", methodName),
+							pair("LocalProposal", powerList[l]),
+							pair("Global", (globalMixture? 1:0)),
 							pair("log2n", i),							
 							pair("tv", tv[i])
 							));
@@ -180,9 +182,6 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 
 		}
 		
-				
-		 
-		 
 				
 		
 
