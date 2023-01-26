@@ -150,7 +150,7 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 				method.write(
 						pair("Method", methodName),
 						pair("MixtureType", (globalMixture? "Global":"Local")),
-						pair("mixtureProportion", (powerList[l]==0?"":mixtureProportion)),									
+						pair("mixtureProportion", (powerList[l]==0?0:mixtureProportion)),									
 						pair("Proposal", powerList[l])						
 						);
 								
