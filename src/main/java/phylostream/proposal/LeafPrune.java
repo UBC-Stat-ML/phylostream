@@ -51,6 +51,7 @@ public class LeafPrune
 	private int edgeNumberInNeighbor; 
 	private double acceptanceRate=0;
 	
+	
 	public double branchRate = 100;
 
 	
@@ -417,6 +418,37 @@ public double[][] neighborLikelihood(UnrootedTree urt, Map<Pair<TreeNode,TreeNod
 }
 
 
+
+public boolean[][] neighbours(UnrootedTree urt,  int neighborRadius) {	
+	Set<UnorderedPair<TreeNode,TreeNode>> edgeSet = urt.getBranchLengths().keySet(); 
+	Indexer<UnorderedPair<TreeNode,TreeNode>> index = new Indexer<UnorderedPair<TreeNode,TreeNode>>(edgeSet);		
+	int nEdge = index.size();	
+	boolean result[][] = new boolean[nEdge][nEdge];
+			
+	
+	for(int i = 0; i< nEdge; i++)
+	{		
+		UnorderedPair<TreeNode, TreeNode> edge =  index.i2o(i); 
+		Map<Pair<TreeNode,TreeNode>, Integer>  neighbors = neighborhoods(urt, Pair.of(edge.getFirst(), edge.getSecond()), neighborRadius);	
+
+		for(int j=0; j< nEdge; j++)
+		{
+			if(i!=j) {
+				List<Pair<TreeNode, TreeNode>> unorderedEdge = Lists.newArrayList();
+				UnorderedPair<TreeNode, TreeNode> edge2 = index.i2o(j);				
+				unorderedEdge.add(Pair.of(edge2.getSecond(), edge2.getFirst()));
+				unorderedEdge.add(Pair.of(edge2.getFirst(), edge2.getSecond()));
+				
+				if(!Collections.disjoint(unorderedEdge, neighbors.keySet()))  	// edge2 is in the neighbor of edge
+					result[i][j] = true; 
+			}
+		}
+	}
+	return(result); 
+}
+
+
+
 // likelihoods are in log scale
 public Pair<double[][],double[]> likelihood(UnrootedTree urt, Map<Pair<TreeNode,TreeNode>, Double> likelihoods, int neighborSize) {	
 	Set<Pair<TreeNode,TreeNode>> edgeSet = likelihoods.keySet();
@@ -554,7 +586,7 @@ public double[][] transitionProbGlobalMixtureMove(UnrootedTree urt, Map<Pair<Tre
  
 			if(weights[i][j]!= Double.NEGATIVE_INFINITY) {
 				edges += 1;  								 			
-			transitionProb[i][j] = transitionProb[i][j] + (1-globalMixtureProportion)*weights[i][j] *mhRatioLocalInformative;
+			transitionProb[i][j] += (1-globalMixtureProportion)*weights[i][j] *mhRatioLocalInformative;
 			acceptanceRate += transitionProb[i][j]; 
 			sum +=  (1-globalMixtureProportion)*weights[i][j]*(1-mhRatioLocalInformative);  
 			}			
@@ -599,9 +631,8 @@ public double[][] transitionProbMixtureMove(UnrootedTree urt, Map<Pair<TreeNode,
 		double sum = mixtureProportion*1.0/nEdge+ (1-mixtureProportion)*weights[i][i];				
 		for(int j=0; j< nEdge; j++)
 		{			
-			if(i!=j) {
-//			if(neighborLikelihood[i][j]!= Double.NEGATIVE_INFINITY) {	
-			if(weights[i][j]!= Double.NEGATIVE_INFINITY) {
+			if(i!=j) {	
+			if(weights[i][j]!= Double.NEGATIVE_INFINITY) {   //in the neighborhood
 				edges += 1;  					
 			double likelihoodRatio = Math.exp(neighborLikelihood[i][j] - neighborLikelihood[i][i]); 
 			double mhRatioUniform = Math.min(likelihoodRatio, 1); 
@@ -610,7 +641,7 @@ public double[][] transitionProbMixtureMove(UnrootedTree urt, Map<Pair<TreeNode,
 			acceptanceRate += transitionProb[i][j]; 
 			sum +=  mixtureProportion*(1.0/nEdge)*(1-mhRatioUniform) + (1-mixtureProportion)*weights[i][j]*(1-mhRatioLocalInformative);  
 			}
-			else 
+			else              //not in the neighborhood
 			{
 				double likelihoodRatio = Math.exp(neighborLikelihood[i][j] - neighborLikelihood[i][i]); 
 				double mhRatioUniform = Math.min(likelihoodRatio, 1); 
@@ -640,6 +671,46 @@ public double[][] transitionProbMixtureMove(UnrootedTree urt, Map<Pair<TreeNode,
 }
 
 
+
+
+public int averageNeighbourEdgeNumbers(boolean [][] neighbors) {		
+		
+	int nEdge = neighbors.length;	
+	int edgeNumber = 0; 	
+	int [] edgeNumbers = new int[nEdge];	 
+	for(int i = 0; i< nEdge; i++)
+	{
+		int edges = 0;				
+		for(int j=0; j< nEdge; j++)
+		{			
+			if(i!=j && neighbors[i][j]) 
+				edges += 1;  			
+		}
+		edgeNumbers[i] = edges+1;
+		edgeNumber += edgeNumbers[i]; 
+			System.out.println(edges); 
+	} 
+	return(edgeNumber/nEdge); 
+}
+
+
+
+// Approxiate the tree radius
+public int treeRadius(UnrootedTree utr) {
+	int radius=0;
+	int maxEdgeNumber = Integer.MIN_VALUE;
+	while(true)
+	{
+		radius += 1; 
+		boolean[][] neighbor = neighbours(utr,  radius); 
+		int edgeNumber = averageNeighbourEdgeNumbers(neighbor);
+		if(maxEdgeNumber<edgeNumber) 
+			maxEdgeNumber = edgeNumber; 							
+		else
+			break;
+	}
+	return(radius);
+}
 
 
 //likelihoods are in log scale

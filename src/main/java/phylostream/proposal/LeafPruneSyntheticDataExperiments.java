@@ -90,19 +90,36 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
-		Random rand = new Random(randSeed); 
-		LeafPrune leafPrune = new LeafPrune(urt, data, rateMatrix);	
-		leafPrune.branchRate = 1.0/generator.branchMeanLength; 
 		
+		Random rand = new Random(randSeed); 
+		LeafPrune leafPrune = new LeafPrune(urt, data, rateMatrix);
+		leafPrune.branchRate = 1.0/generator.branchMeanLength;
         Map<org.apache.commons.lang3.tuple.Pair<TreeNode, TreeNode>, Double> re = leafPrune.attachmentPointsLikelihoods(rand, nReplicates);
+
+		
+		UnrootedTree treeAfterPruning = leafPrune.urtAfterOneLeafRemoval();					
+		try {
+			result.getAutoClosedBufferedWriter("urt.newick").append(urt.toNewick());
+			result.getAutoClosedBufferedWriter("prunedSubtree.newick").append(leafPrune.getPrunedSubtree());			
+			result.getAutoClosedBufferedWriter("treeAfterPruning.newick").append(leafPrune.getTreeAfterPruning());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		
+		int treeRadius = leafPrune.treeRadius(treeAfterPruning); 	    
+		 
 		
 		TabularWriter allTV = result.getTabularWriter("totalVariationDistance");
 		TabularWriter edges = result.getTabularWriter("edgeNumberInNeighborhood");
 		TabularWriter acc   = result.getTabularWriter("acceptanceRate");
 		TabularWriter method = result.getTabularWriter("proposalMethod");
+		TabularWriter treeradiusFile = result.getTabularWriter("treeRadius");
+		treeradiusFile.write(
+				pair("treeRadius", treeRadius)
+				);
 				
-		double[] powerList = new double[] {0, 0.5, 1};
+		double[] powerList = new double[] {0};
 		
 		for(Integer k=0;k<neighborhoodRadius.size();k++)
 		{		
@@ -110,13 +127,17 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 			{
 				double[] tv = null;
 				
-				if(globalMixture && powerList[l]==0)
+				if(globalMixture && powerList[l]==0) {                                // Global uniform proposal
+					System.out.println("global uniform:");
 					tv = leafPrune.totalVariationGlobal(re, K, neighborhoodRadius.get(k), powerList[l], 1);
-				
-				if(globalMixture && powerList[l]>0)
-					tv = leafPrune.totalVariationGlobal(re, K, neighborhoodRadius.get(k), powerList[l], mixtureProportion);
+				}
 				else
+				{				
+				if(globalMixture && powerList[l]>0)                                // Local proposal mixed with the global proposal                                        
+					tv = leafPrune.totalVariationGlobal(re, K, neighborhoodRadius.get(k), powerList[l], mixtureProportion);
+				else                 //  uniform local proposal, or local proposal mixed with the local uniform proposal  
 					tv = leafPrune.totalVariationSequenceNearestNeighbor(re, K, neighborhoodRadius.get(k), powerList[l], mixtureProportion);
+				}
 				double acceptanceRate = leafPrune.getAcceptanceRate();
 				
 				acc.write(
@@ -124,20 +145,20 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 						pair("Proposal", powerList[l]),						
 						pair("acceptanceRate", acceptanceRate));
 				
-				String methodName =  "Global " + globalMixture + " Proposal " + powerList[l];
+				
+				String methodName =  (globalMixture? "Global":"Local") + " Proposal " + powerList[l] + (powerList[l]==0?"":mixtureProportion);
 				method.write(
 						pair("Method", methodName),
-						pair("GlobalMixture", globalMixture),
-						pair("mixtureProportion", mixtureProportion),									
+						pair("MixtureType", (globalMixture? "Global":"Local")),
+						pair("mixtureProportion", (powerList[l]==0?"":mixtureProportion)),									
 						pair("Proposal", powerList[l])						
 						);
-				
-				
+								
 				for(int i=0; i<tv.length; i++)
 				{
 					List<Pair> toPrint = new ArrayList<>(Arrays.asList(
 							pair("neighborRadius", neighborhoodRadius.get(k)),							
-							pair("mixtureProportion", mixtureProportion),							
+							pair("mixtureProportion", (powerList[l]==0?"":mixtureProportion)),							
 							pair("Proposal", methodName),
 							pair("log2n", i),							
 							pair("tv", tv[i])
@@ -147,7 +168,7 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 			}
 	
 			int [] edgeNumbers = leafPrune.getEdgeNumbers();
-
+			
 			for(int i=0; i<edgeNumbers.length; i++)
 			{			
 				edges.write(
@@ -158,16 +179,12 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 			}
 
 		}
+		
 				
-		UnrootedTree treeAfterPruning = leafPrune.urtAfterOneLeafRemoval();					
-		try {
-			result.getAutoClosedBufferedWriter("urt.newick").append(urt.toNewick());
-			result.getAutoClosedBufferedWriter("prunedSubtree.newick").append(leafPrune.getPrunedSubtree());			
-			result.getAutoClosedBufferedWriter("treeAfterPruning.newick").append(leafPrune.getTreeAfterPruning());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	    
+		 
+		 
+				
+		
 
 		TabularWriter csv = result.getTabularWriter("treelikelihood");
 		for(org.apache.commons.lang3.tuple.Pair<TreeNode, TreeNode> edge : re.keySet()) {			
