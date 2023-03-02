@@ -61,6 +61,9 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 	@Arg       @DefaultValue("false")	
 	public boolean globalMixture =  false;
 	
+	 @Arg       @DefaultValue("")
+	 public 	String treeFile = "";
+
 	
 	@Override
 	public void run() {
@@ -71,6 +74,9 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 	    generator.branchMeanLength = branchMeanLength;
 	    generator.errorProbability = 0;
 	    generator.rateMatrix = rateMatrix;   
+//	    generator.treeFile = "data/data27-1949.nex.run1.newick";	    
+	    generator.treeFile = treeFile; //"/Users/liangliangwang/projects/phylostream/data/pruned.tree.nwk.txt";
+	    
 
 	    Realization realization = generator.next();         
 	    UnrootedTree urt = realization.trueTree;

@@ -352,7 +352,7 @@ public double[] totalVariationGlobal(Map<Pair<TreeNode,TreeNode>, Double> likeli
 	if(stationaryDist(likelihoodsVec)) {		   //	likelihoodsVec expNormalized		
 	double[][] A = transitionProbGlobalMixtureMove(urtAfterOneLeafRemoval, likelihoods, neighborSize, power, mixtureProportion);  // Note likelihoods are in log scale   
 	for(int i=0;i<K;i++) 	
-	result[i]=totalVariation(likelihoodsVec,multiplyTransitionProbMat(A, (i+1)));
+		result[i]=totalVariation(likelihoodsVec,multiplyTransitionProbMat(A, (i+1)));
 	}
 	return(result);
 }
@@ -501,7 +501,7 @@ public double[][] neighborWeight(double[][] neighborLikelihood, double power) {
 	for(int i=0; i<sz; i++)
 		for(int j=0; j<sz; j++)
 			if(neighborLikelihood[i][j]== Double.NEGATIVE_INFINITY) 
-			neighborWeight[i][j] = Double.NEGATIVE_INFINITY;
+				neighborWeight[i][j] = Double.NEGATIVE_INFINITY;
 	
 	for(int i=0; i<sz; i++)
 	{
@@ -580,16 +580,16 @@ public double[][] transitionProbGlobalMixtureMove(UnrootedTree urt, Map<Pair<Tre
 			if(i!=j) {
 				double likelihoodRatio = Math.exp(likelihoodVec[j] - likelihoodVec[i]); 
 				double mhRatioUniform = Math.min(likelihoodRatio, 1);   //global uniform
-				double mhRatioLocalInformative = Math.min(likelihoodRatio*weights[j][i]/weights[i][j], 1);
 				transitionProb[i][j] = globalMixtureProportion*(1.0/nEdge)*mhRatioUniform;
 				sum += globalMixtureProportion*(1.0/nEdge)*(1-mhRatioUniform); 
  
-			if(weights[i][j]!= Double.NEGATIVE_INFINITY) {
-				edges += 1;  								 			
-			transitionProb[i][j] += (1-globalMixtureProportion)*weights[i][j] *mhRatioLocalInformative;
-			acceptanceRate += transitionProb[i][j]; 
-			sum +=  (1-globalMixtureProportion)*weights[i][j]*(1-mhRatioLocalInformative);  
-			}			
+				if(weights[i][j]!= Double.NEGATIVE_INFINITY) {
+					double mhRatioLocalInformative = Math.min(likelihoodRatio*weights[j][i]/weights[i][j], 1);
+					edges += 1;  								 			
+					transitionProb[i][j] += (1-globalMixtureProportion)*weights[i][j] *mhRatioLocalInformative;
+					acceptanceRate += transitionProb[i][j]; 
+					sum +=  (1-globalMixtureProportion)*weights[i][j]*(1-mhRatioLocalInformative);  
+				}			
 		}
 		}
 			transitionProb[i][i] = sum;

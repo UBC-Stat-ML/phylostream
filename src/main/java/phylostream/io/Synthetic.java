@@ -1,6 +1,8 @@
 package phylostream.io;
 
 
+import java.io.File;
+import java.io.IOException;
 import bayonet.distributions.Random;
 import blang.core.RealConstant;
 import blang.core.RealDistribution;
@@ -56,11 +58,21 @@ public class Synthetic implements Dataset {
   @Arg @DefaultValue("1000")
   public int nSites = 1000;
   
+  @Arg       @DefaultValue("")
+ public 	String treeFile = "";
+  
+  
+  
   public Realization next() {
-    RealDistribution branchDistribution = Exponential.distribution(new RealConstant(1.0 / branchMeanLength)); 
-    UnrootedTree tree = NonClockTreePriorUtils.sample(rand, branchDistribution, TopologyUtils.syntheticTaxaList(nLeaves));
-    TreeNode arbitraryRoot = arbitraryRoot(tree);
-    
+	UnrootedTree tree = null;
+	if(treeFile =="") {
+		RealDistribution branchDistribution = Exponential.distribution(new RealConstant(1.0 / branchMeanLength)); 
+     tree = NonClockTreePriorUtils.sample(rand, branchDistribution, TopologyUtils.syntheticTaxaList(nLeaves));
+	}else {
+	    System.out.println(treeFile);
+		tree = UnrootedTree.fromNewick(new File(treeFile));
+	}
+	TreeNode arbitraryRoot = arbitraryRoot(tree);    
     double [][] loadedRateMatrix = SimpleRateMatrix.fromResource(rateMatrix).getRateMatrix();
     int [] latent2observed = new int[] {0, 1, 2, 3};
     RateMatrixToEmissionModel emissionModel = errorProbability == 0.0 ? null : new NoisyEmissionModel(latent2observed, 4, new RealConstant(errorProbability));
