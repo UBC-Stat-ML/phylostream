@@ -10,6 +10,7 @@ import blang.engines.AdaptiveJarzynski;
 import blang.engines.internals.PosteriorInferenceEngine;
 import blang.inits.GlobalArg;
 import blang.inits.experiments.ExperimentResults;
+import blang.inits.experiments.tabwriters.TidySerializer;
 import blang.io.BlangTidySerializer;
 import blang.runtime.Runner;
 import blang.runtime.SampledModel;
@@ -59,6 +60,13 @@ public class PhyloStreamSMC extends AdaptiveJarzynski implements PosteriorInfere
       System.out.popIndent();
     }
     
+    double logNormEstimate = approximation.logNormEstimate();
+    System.out.println("Log normalization constant estimate: " + logNormEstimate);
+    results.getTabularWriter(Runner.LOG_NORMALIZATION_ESTIMATE).write(
+        Pair.of(Runner.LOG_NORMALIZATION_ESTIMATOR, "SCM"),
+        Pair.of(TidySerializer.VALUE, logNormEstimate)
+      );
+    
     approximation = approximation.resample(random, resamplingScheme);
     
     BlangTidySerializer tidySerializer = new BlangTidySerializer(results.child(Runner.SAMPLES_FOLDER)); 
@@ -76,7 +84,6 @@ public class PhyloStreamSMC extends AdaptiveJarzynski implements PosteriorInfere
   
     tipIdColumn = "tipId";
   
-  @Override
   protected void recordPropagationStatistics(int iteration, double temperature, double ess) {
     results.child(Runner.MONITORING_FOLDER).getTabularWriter(propagationFileName).printAndWrite(
         Pair.of(iterationColumn, globalIteration++),
@@ -86,7 +93,6 @@ public class PhyloStreamSMC extends AdaptiveJarzynski implements PosteriorInfere
     );
   }
 
-  @Override
   protected void recordResamplingStatistics(int iteration, double temperature, double logNormalization) {
     results.child(Runner.MONITORING_FOLDER).getTabularWriter(resamplingFileName).printAndWrite(
         Pair.of(iterationColumn, globalIteration),

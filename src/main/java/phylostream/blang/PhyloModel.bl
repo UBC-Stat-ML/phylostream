@@ -8,6 +8,8 @@ model PhyloModel {
   param Dataset data
   random BayesianPhylo tree ?: {
     if (data instanceof Synthetic) {
+      if (data.errorProbability == 0.0)
+        throw new RuntimeException("Error probability of zero currently not supported - error model used by annealer")
       val realization = data.next()
       val dataset = realization.nextDataset()
       Globals::alignment = dataset

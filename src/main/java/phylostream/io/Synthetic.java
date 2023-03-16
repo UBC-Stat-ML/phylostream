@@ -9,6 +9,7 @@ import blang.core.RealDistribution;
 import blang.distributions.Exponential;
 import blang.inits.Arg;
 import blang.inits.DefaultValue;
+import blang.runtime.internals.objectgraph.SkipDependency;
 import conifer.EvolutionaryModel;
 import conifer.SequenceAlignment;
 import conifer.TopologyUtils;
@@ -31,6 +32,7 @@ import conifer.models.MultiCategorySubstitutionModel;
  */
 public class Synthetic implements Dataset {
     
+  @SkipDependency(isMutable = false)
   @Arg @DefaultValue("1")
   public Random rand = new Random(1);
   
@@ -98,8 +100,14 @@ public class Synthetic implements Dataset {
   
   public class Realization {
     public final TreeNode trueRoot;
+    
+    @SkipDependency(isMutable = false)
     public final UnrootedTree trueTree;
+    
+    @SkipDependency(isMutable = false)
     public final EvolutionaryModel trueModel;
+    
+    @SkipDependency(isMutable = false)
     final TreeObservations data;
     
     Realization(TreeNode trueRoot, UnrootedTree trueTree, EvolutionaryModel trueModel, TreeObservations data) {

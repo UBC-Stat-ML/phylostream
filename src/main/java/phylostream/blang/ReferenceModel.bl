@@ -9,14 +9,25 @@ import phylostream.io.Synthetic.Realization
 
 import static conifer.Utils.*
 import phylostream.io.Dataset
+import phylostream.io.Globals
 
 model ReferenceModel {
   param Dataset data
   param Realization realization ?: {
+    if (data instanceof Synthetic) {
+      val realization = data.next()
+      Globals::generatingTree = realization.trueTree
+    } else throw new RuntimeException
     if (data instanceof Synthetic) data.next
     else null
   }
-  random SequenceAlignment observations ?: {realization.nextDataset as SequenceAlignment}
+  random SequenceAlignment observations ?: {
+    val result = realization.nextDataset as SequenceAlignment
+    if (data instanceof Synthetic) {
+      Globals::alignment = result
+    } else throw new RuntimeException
+    result
+  }
   random UnrootedTree tree ?: unrootedTree(observations.observedTreeNodes)
   param EvolutionaryModel evoModel ?: realization.trueModel
   laws {
