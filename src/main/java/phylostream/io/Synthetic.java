@@ -67,7 +67,7 @@ public class Synthetic implements Dataset {
   
   public Realization next() {
 	UnrootedTree tree = null;
-	if(treeFile =="") {
+	if(treeFile.equals("")) {
 		RealDistribution branchDistribution = Exponential.distribution(new RealConstant(1.0 / branchMeanLength)); 
      tree = NonClockTreePriorUtils.sample(rand, branchDistribution, TopologyUtils.syntheticTaxaList(nLeaves));
 	}else {

@@ -89,7 +89,7 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 		}
 	    	    		
 		TreeObservations data =  generator.next().nextDataset();
-	    System.out.println(data.nSites());
+//	    System.out.println(data.nSites());
 	    
 		try {
 			result.getAutoClosedBufferedWriter("data.txt").append(data.toString());
