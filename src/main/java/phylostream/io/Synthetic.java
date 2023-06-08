@@ -2,7 +2,6 @@ package phylostream.io;
 
 
 import java.io.File;
-import java.io.IOException;
 import bayonet.distributions.Random;
 import blang.core.RealConstant;
 import blang.core.RealDistribution;

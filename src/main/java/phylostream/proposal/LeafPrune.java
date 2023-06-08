@@ -49,22 +49,19 @@ public class LeafPrune
 	private UnrootedTree urtAfterOneLeafRemoval = null;   // tree after pruning a leaf
 	private int[]  edgeNumbers; 
 	private int edgeNumberInNeighbor; 
-	private double acceptanceRate=0;
-	
-	
+	private double acceptanceRate=0;	
 	public double branchRate = 100;
-
 	
 	public LeafPrune(UnrootedTree urt, TreeObservations data, String rateMatrix) {
+		new LeafPrune(urt, data, rateMatrix, 0, 0.5, 2); 
+	}
+	
+	public LeafPrune(UnrootedTree urt, TreeObservations data, String rateMatrix, double invariantSiteProbability, double shapeParameter, int nPositiveCategories) {
 		this.urtree = urt;
 		this.data = data;	  
-		TreeNode arbitraryRoot = Synthetic.arbitraryRoot(urt);
-//		String rateMatrix = "/phylostream/COVID_GTR.txt";	    
+		TreeNode arbitraryRoot = Synthetic.arbitraryRoot(urt);	    
 		double [][] loadedRateMatrix = SimpleRateMatrix.fromResource(rateMatrix).getRateMatrix();	    
 		CTMCParameters ctmc = new SimpleRateMatrix(loadedRateMatrix, null);	    
-		double invariantSiteProbability = 0.01;	    	    
-		double shapeParameter = 1;
-		int nPositiveCategories = 4;
 		int nSites = data.nSites();	    	    
 		DiscreteGammaMixture rateMatrixMixture = new DiscreteGammaMixture(new RealConstant(invariantSiteProbability), new RealConstant(shapeParameter), ctmc, nPositiveCategories);
 		this.evolutionaryModel = new MultiCategorySubstitutionModel<DiscreteGammaMixture>(rateMatrixMixture, nSites);		

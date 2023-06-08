@@ -43,6 +43,7 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 	public int K = 10;
 
 	@Arg       @DefaultValue("/phylostream/COVID_GTR.txt")
+//	String rateMatrix = "/phylostream/COVID_GTR.txt";
 	String rateMatrix = "/phylostream/COVID_GTR.txt";
 
 	@Arg       @DefaultValue({"1", "2"})
