@@ -42,9 +42,8 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 	@Arg       @DefaultValue("10")
 	public int K = 10;
 
-	@Arg       @DefaultValue("/phylostream/COVID_GTR.txt")
-//	String rateMatrix = "/phylostream/COVID_GTR.txt";
-	String rateMatrix = "/phylostream/COVID_GTR.txt";
+	@Arg       @DefaultValue("/phylostream/GTR.txt")
+	String rateMatrix = "/phylostream/GTR.txt";
 
 	@Arg       @DefaultValue({"1", "2"})
 	public List<Integer> neighborhoodRadius = Arrays.asList(1, 2);  
@@ -117,7 +116,8 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 		Random rand = new Random(randSeed); 
 		LeafPrune leafPrune = new LeafPrune(urt, data, rateMatrix);
 		//		leafPrune.branchRate = 1.0/generator.branchMeanLength;
-		leafPrune.branchRate = 100; // TODO: update this based on the tree height? 
+//		leafPrune.branchRate = 100; // TODO: update this based on the tree height?
+		leafPrune.branchRate = 10; // TODO: update this based on the tree height?
 		Map<org.apache.commons.lang3.tuple.Pair<TreeNode, TreeNode>, Double> re = leafPrune.attachmentPointsLikelihoods(rand, nReplicates);
 
 

@@ -53,7 +53,7 @@ public class LeafPrune
 	public double branchRate = 100;
 	
 	public LeafPrune(UnrootedTree urt, TreeObservations data, String rateMatrix) {
-		new LeafPrune(urt, data, rateMatrix, 0, 0.5, 2); 
+		this(urt, data, rateMatrix, 0, 0.5, 2); 
 	}
 	
 	public LeafPrune(UnrootedTree urt, TreeObservations data, String rateMatrix, double invariantSiteProbability, double shapeParameter, int nPositiveCategories) {
@@ -72,6 +72,7 @@ public class LeafPrune
 	}
 
 
+	
 
 	public Pair<TreeNode, TreeNode>  edgeAttachedToLeaf(Random random, UnrootedTree urtree) {
 		// nothing interesting to do if tree is only a single branch
