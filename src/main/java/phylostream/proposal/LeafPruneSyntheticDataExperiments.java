@@ -112,12 +112,11 @@ public class LeafPruneSyntheticDataExperiments extends Experiment {
 			data = SequenceAlignment.loadObservedData(file, PhylogeneticObservationFactory.nucleotidesFactory(), obs);		
 		}
 
-
 		Random rand = new Random(randSeed); 
 		LeafPrune leafPrune = new LeafPrune(urt, data, rateMatrix);
 		//		leafPrune.branchRate = 1.0/generator.branchMeanLength;
-//		leafPrune.branchRate = 100; // TODO: update this based on the tree height?
-		leafPrune.branchRate = 10; // TODO: update this based on the tree height?
+		leafPrune.branchRate = 1.0/leafPrune.getAverageBranchLength(); // TODO: update this based on the tree height?
+		
 		Map<org.apache.commons.lang3.tuple.Pair<TreeNode, TreeNode>, Double> re = leafPrune.attachmentPointsLikelihoods(rand, nReplicates);
 
 

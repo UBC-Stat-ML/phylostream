@@ -71,7 +71,13 @@ public class LeafPrune
 			this.likelihoods.add(new SumProduct<TreeNode>(graphs.get(category)));	 	  	  
 	}
 
-
+	public double getAverageBranchLength() {
+		double result=0;
+		Map<UnorderedPair<TreeNode,TreeNode>, Double> branchLengthMap = this.urtree .getBranchLengths();		
+		for(UnorderedPair<TreeNode,TreeNode> key : branchLengthMap.keySet())
+			result += branchLengthMap.get(key);
+		return(result/branchLengthMap.size());		
+	}
 	
 
 	public Pair<TreeNode, TreeNode>  edgeAttachedToLeaf(Random random, UnrootedTree urtree) {
